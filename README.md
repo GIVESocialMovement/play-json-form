@@ -36,8 +36,6 @@ Since `JsObject` is powerful enough to support `Map[String, String]`, one good w
 backward compatibility is to make `Mapping.unbind` return `JsObject` and provides a thin layer that converts
 `JsObject` to `Map[String, String]`.
 
-We'll work with Play's team to make this happen if it sounds good to them.
-
 
 Important compatibility notes
 ------------------------------

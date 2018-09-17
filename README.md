@@ -52,6 +52,18 @@ Since we aim to be API compatible with Play's Form, there are certain counter-in
 Most of these behaviours stem from the fact that `JsObject` has more complex types while `Map[String, String]` doesn't.
 
 
+Usage
+------
+
+Add the below line to your `build.sbt`:
+
+```
+resolvers += Resolver.bintrayRepo("givers", "maven")
+
+addSbtPlugin("givers.form" % "form" % "0.1.0")
+```
+
+
 Example
 --------
 

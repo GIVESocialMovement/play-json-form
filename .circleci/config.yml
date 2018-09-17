@@ -1,0 +1,32 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk-node
+    working_directory: ~/repo
+    environment:
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - dependencies-v1-{{ checksum "project/plugins.sbt" }}-{{ checksum "build.sbt" }}
+          - dependencies-v1-{{ checksum "project/plugins.sbt" }}
+          - dependencies-v1
+      - restore_cache:
+          keys:
+          - target-v1-{{ .Branch }}
+          - target-v1
+      - run: sbt coverage test coverageReport
+      - run: bash <(curl -s https://codecov.io/bash) -Z
+      - save_cache:
+          paths:
+            - target
+          key: target-v1-{{ .Branch }}
+      - save_cache:
+          paths:
+            - ~/.m2
+            - ~/.ivy2/cache
+            - ~/.sbt
+          key: dependencies-v1-{{ checksum "project/plugins.sbt" }}-{{ checksum "build.sbt" }}

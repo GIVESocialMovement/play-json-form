@@ -1,0 +1,51 @@
+@(params: play.api.libs.json.JsValue)
+
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      Name: <input type="text" v-model="params.name"><br/><br/>
+      Price: <input type="text" v-model="params.price"><br/><br/>
+      <button v-on:click="submit">Submit</button>
+      <template v-if="message"><br/><br/>{{ message }}</template>
+    </div>
+
+    <script>
+      var app = new Vue({
+        el: '#app',
+        data: {
+          // In real-world, you should encode `@@params.toString` with Base64 to prevent XSS.
+          params: @Html(params.toString),
+          success: false,
+          message: ''
+        },
+        methods: {
+          submit: function() {
+            this.success = false;
+
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = () => {
+              if (xhr.readyState === 4) { // 4 means done
+                let resp = JSON.parse(xhr.responseText);
+
+                if (resp.success) {
+                  this.message = 'Submitted successfully';
+                } else {
+                  this.message = 'A validation error occurs: ' + resp.messages.join(', ');
+                }
+              }
+            };
+
+            xhr.open('POST', '/submit');
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+            xhr.send(JSON.stringify(this.params));
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
+
+

@@ -12,7 +12,7 @@ The library is inherently compatible with JSON, as in the conversion between `Js
 In contrast, [The standard Play's form library](https://www.playframework.com/documentation/2.6.x/ScalaForms) doesn't hold the symmetry property when converting nested objects and arrays.
 
 
-### But why is JSON compatibiliy important?
+### But why is JSON compatibility important?
 
 At [GIVE.asia](https://give.asia), we serialize `play.api.data.Form` to json and pass it to a Vue component.
 
@@ -24,7 +24,7 @@ And it became tricky to modify our Vue components to handle this kind of array e
 Please note that converting JSON into case class (using `bindFromRequest`) works fine.
 In a rare occasion that you might have a field that contains `[..]`, there might cause an issue.
 
-Please see this blog post, which also explains how we build a form, for more context:
+Please see this blog post, which also explains how we build a form, for more context: https://give.engineering/2018/09/15/form-submission-and-validation-in-playframework.html
 
 
 ### Why can't we modify `play.api.data.Form` to be fully compatible with JSON?
@@ -54,6 +54,8 @@ Most of these behaviours stem from the fact that `JsObject` has more complex typ
 
 Example
 --------
+
+You can see a fully working example in the folder `example-project`.
 
 Making a form:
 

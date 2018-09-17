@@ -32,7 +32,7 @@ Please see this blog post, which also explains how we build a form, for more con
 `Map[String, String]` isn't powerful enough to support `JsObject`, and it is defined in many critical places.
 For example, `Mapping.unbind` returns `Map[String, String]`.
 
-Since `JsObject` is powerful enough to support `Map[String, String], one good way to improve Play's form with
+Since `JsObject` is powerful enough to support `Map[String, String]`, one good way to improve Play's form with
 backward compatibility is to make `Mapping.unbind` return `JsObject` and provides a thin layer that converts
 `JsObject` to `Map[String, String]`.
 

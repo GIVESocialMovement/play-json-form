@@ -1,5 +1,9 @@
 JSON Form for Playframework
-=======================================
+============================
+
+[![CircleCI](https://circleci.com/gh/GIVESocialMovement/play-json-form/tree/master.svg?style=shield)](https://circleci.com/gh/GIVESocialMovement/play-json-form/tree/master)
+[![codecov](https://codecov.io/gh/GIVESocialMovement/play-json-form/branch/master/graph/badge.svg)](https://codecov.io/gh/GIVESocialMovement/play-json-form)
+[![Gitter chat](https://badges.gitter.im/GIVE-asia/gitter.png)](https://gitter.im/GIVE-asia/Lobby)
 
 This is a replacement of [Play's form submission and validation](https://www.playframework.com/documentation/2.6.x/ScalaForms).
 The API is similar enough that, hopefully, you can replace the import statements to make it work.

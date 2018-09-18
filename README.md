@@ -49,6 +49,8 @@ Since we aim to be API compatible with Play's Form, there are certain counter-in
 
 Most of these behaviours stem from the fact that `JsObject` has more complex types while `Map[String, String]` doesn't.
 
+In the future, we might offer a mode to turn off the above behaviours.
+
 
 Usage
 ------

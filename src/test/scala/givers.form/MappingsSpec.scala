@@ -136,7 +136,9 @@ object MappingsSpec extends BaseSpec {
 
       "binds an empty string" - {
         // In Play's Form, an empty string is converted back to None.
-        assert(Mappings.opt(Mappings.text).bind(JsDefined(JsString(""))) == Success(None))
+        assert(Mappings.opt(Mappings.text, translateEmptyStringToNone = true).bind(JsDefined(JsString(""))) == Success(None))
+        // For the normal mode, we don't do that.
+        assert(Mappings.opt(Mappings.text).bind(JsDefined(JsString(""))) == Success(Some("")))
       }
 
       "binds/unbinds value" - {
@@ -148,11 +150,13 @@ object MappingsSpec extends BaseSpec {
     "seq" - {
       "binds invalid" - {
         assert(Mappings.seq(Mappings.boolean, nonEmpty = true).bind(JsDefined(JsArray())) == Failure(Mapping.error("error.required")))
+        assert(Mappings.seq(Mappings.boolean).bind(JsDefined(JsNull)) == Failure(Mapping.error("error.required")))
+        assert(Mappings.seq(Mappings.boolean).bind(JsUndefined("")) == Failure(Mapping.error("error.required")))
       }
 
       "binds/unbinds empty array" - {
-        assert(Mappings.seq(Mappings.boolean).bind(JsDefined(JsNull)) == Success(Seq.empty))
-        assert(Mappings.seq(Mappings.boolean).bind(JsUndefined("")) == Success(Seq.empty))
+        assert(Mappings.seq(Mappings.boolean, translateNoneToEmpty = true).bind(JsDefined(JsNull)) == Success(Seq.empty))
+        assert(Mappings.seq(Mappings.boolean, translateNoneToEmpty = true).bind(JsUndefined("")) == Success(Seq.empty))
         assert(Mappings.seq(Mappings.boolean).bind(JsDefined(JsArray())) == Success(Seq.empty))
         assert(Mappings.seq(Mappings.boolean).unbind(Seq.empty) == JsArray())
       }

@@ -127,14 +127,20 @@ object Mappings extends ObjectMappings {
     def unbind(value: Int): JsValue = JsNumber(BigDecimal(value))
   }
 
-  def seq[T](mapping: Mapping[T], nonEmpty: Boolean = false): Mapping[Seq[T]] = {
+  def seq[T](mapping: Mapping[T], nonEmpty: Boolean = false, translateNoneToEmpty: Boolean = false): Mapping[Seq[T]] = {
     Some
       .apply(
         new Mapping[Seq[T]] {
           def bind(value: JsLookupResult): Try[Seq[T]] = {
             value.toOption.filterNot(_ == JsNull) match {
               case Some(v) => bind(v)
-              case None => Success(Seq.empty)
+              case None =>
+                // In Play's form, a missing key is translated to an empty Seq.
+                if (translateNoneToEmpty) {
+                  Success(Seq.empty)
+                } else {
+                  Failure(Mapping.error("error.required"))
+                }
             }
           }
 
@@ -170,11 +176,11 @@ object Mappings extends ObjectMappings {
 
   def optional[T](mapping: Mapping[T]): Mapping[Option[T]] = opt(mapping)
 
-  def opt[T](mapping: Mapping[T]): Mapping[Option[T]] = new Mapping[Option[T]] {
+  def opt[T](mapping: Mapping[T], translateEmptyStringToNone: Boolean = false): Mapping[Option[T]] = new Mapping[Option[T]] {
     def bind(value: JsLookupResult): Try[Option[T]] = {
       value.toOption match {
         // In Play's Form, an empty string is converted back to None.
-        case Some(v: JsString) if v.value.isEmpty => Success(None)
+        case Some(v: JsString) if v.value.isEmpty && translateEmptyStringToNone => Success(None)
         case Some(v) => bind(v)
         case None => Success(None)
       }

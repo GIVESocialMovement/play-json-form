@@ -6,7 +6,6 @@ JSON Form for Playframework
 [![Gitter chat](https://badges.gitter.im/GIVE-asia/gitter.png)](https://gitter.im/GIVE-asia/Lobby)
 
 This is a replacement of [Play's form submission and validation](https://www.playframework.com/documentation/2.6.x/ScalaForms).
-The API is similar enough that, hopefully, you can replace the import statements to make it work.
 
 The library is inherently compatible with JSON, as in the conversion between `JsValue` and a case class is symmetric.
 In contrast, [The standard Play's form library](https://www.playframework.com/documentation/2.6.x/ScalaForms) doesn't hold the symmetry property when converting nested objects and arrays.
@@ -40,12 +39,12 @@ backward compatibility is to make `Mapping.unbind` return `JsObject` and provide
 Important compatibility notes
 ------------------------------
 
-Since we aim to be API compatible with Play's Form, there are certain counter-intuitive behaviours that should be highlighted.
+Since we aim to facilitate the migration from Play's Form, there are certain counter-intuitive behaviours that should be highlighted.
 
 The below are the behaviours that you need to enable explicitly:
 
 * Set `translateNoneToEmpty` to `true` in order to make `seq` accept the absence of the value as `Seq.empty` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/Form.scala#L683).
-* Set `translateEmptyStringToNone` to `true` in order to make `optional(text)` translate an empty string to `None` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/Form.scala#L813).
+* Set `translateEmptyStringToNone` to `true` in order to make `opt(text)` translate an empty string to `None` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/Form.scala#L813).
 * Set `translateAbsenceToFalse` to `true` in order to make `boolean` translate the absence of the key as `false` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/format/Format.scala#L181).
 
 When migrating from Play's Form, you __should enable__ both of these flags to avoid surprises.
@@ -66,7 +65,7 @@ Add the below line to your `build.sbt`:
 ```
 resolvers += Resolver.bintrayRepo("givers", "maven")
 
-addSbtPlugin("givers.form" %% "play-json-form" % "0.3.0")
+addSbtPlugin("givers.form" %% "play-json-form" % "0.3.1")
 ```
 
 

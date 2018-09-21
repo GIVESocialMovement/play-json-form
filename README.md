@@ -46,13 +46,14 @@ The below are the behaviours that you need to enable explicitly:
 
 * Set `translateNoneToEmpty` to `true` in order to make `seq` accept the absence of the value as `Seq.empty` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/Form.scala#L683).
 * Set `translateEmptyStringToNone` to `true` in order to make `optional(text)` translate an empty string to `None` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/Form.scala#L813).
+* Set `translateAbsenceToFalse` to `true` in order to make `boolean` translate the absence of the key as `false` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/format/Format.scala#L181).
 
 When migrating from Play's Form, you __should enable__ both of these flags to avoid surprises.
 
 The below behaviours are enabled automatically because they are sensible. Here they are:
 
 * `number` and `longNumber` accept both `JsString` and `JsNumber`.
-* `boolean` accepts both `JsString` and `JsBoolean`. It also accepts the absence of the value as `false` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/format/Format.scala#L181).
+* `boolean` accepts both `JsString` and `JsBoolean`.
 
 Most of these behaviours stem from the fact that `JsObject` has more complex types while `Map[String, String]` doesn't.
 

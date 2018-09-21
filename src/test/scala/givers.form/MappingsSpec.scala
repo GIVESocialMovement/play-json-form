@@ -24,11 +24,12 @@ object MappingsSpec extends BaseSpec {
       }
 
       "binds missing" - {
-        assert(Mappings.boolean.bind(JsDefined(JsNull)) == Success(false))
-        assert(Mappings.boolean.bind(JsUndefined("")) == Success(false))
+        assert(Mappings.boolean(translateAbsenceToFalse = true).bind(JsDefined(JsNull)) == Success(false))
+        assert(Mappings.boolean(translateAbsenceToFalse = true).bind(JsUndefined("")) == Success(false))
       }
 
       "binds invalid" - {
+        assert(Mappings.boolean.bind(JsUndefined("")) == Failure(Mapping.error("error.required")))
         assert(Failure(Mapping.error("error.boolean")) == Mappings.boolean.bind(JsDefined(JsString("random"))))
         assert(Failure(Mapping.error("error.boolean")) == Mappings.boolean.bind(JsDefined(JsNumber(100L))))
       }

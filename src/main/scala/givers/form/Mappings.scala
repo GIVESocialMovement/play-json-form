@@ -54,20 +54,23 @@ object Mappings extends ObjectMappings {
     s.nonEmpty && s.contains("@")
   }
 
-  val boolean: Mapping[Boolean] = new Mapping[Boolean] {
+  val boolean: Mapping[Boolean] = boolean()
+  def boolean(translateAbsenceToFalse: Boolean = false): Mapping[Boolean] = new Mapping[Boolean] {
     def bind(value: JsLookupResult): Try[Boolean] = try {
-      Success(
-        value.toOption.filterNot(_ == JsNull) match {
-          case Some(v: JsBoolean) => v.value
-          case Some(v: JsString) => v.value.toBoolean
-          case None => false
-          case _ => throw new Exception()
-        }
-      )
+      value.toOption.filterNot(_ == JsNull) match {
+        case Some(v: JsBoolean) => Success(v.value)
+        case Some(v: JsString) => Success(v.value.toBoolean)
+        case None =>
+          if (translateAbsenceToFalse) {
+            Success(false)
+          } else {
+            Failure(Mapping.error("error.required"))
+          }
+        case _ => throw new Exception()
+      }
     } catch {
       case _: Exception => Failure(Mapping.error("error.boolean"))
     }
-
 
     def unbind(value: Boolean): JsValue = JsBoolean(value)
   }

@@ -177,8 +177,6 @@ object Mappings extends ObjectMappings {
       .get
   }
 
-  def optional[T](mapping: Mapping[T]): Mapping[Option[T]] = opt(mapping)
-
   def opt[T](mapping: Mapping[T], translateEmptyStringToNone: Boolean = false): Mapping[Option[T]] = new Mapping[Option[T]] {
     def bind(value: JsLookupResult): Try[Option[T]] = {
       value.toOption match {

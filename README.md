@@ -21,7 +21,7 @@ With `Map[String, String]`, a JSON `{ "images": ["test.png"] }` would eventually
 And it became tricky to modify our Vue components to handle this kind of array encoding.
 
 Please note that converting JSON into case class (using `bindFromRequest`) works fine.
-In a rare occasion that you might have a field that contains `[..]`, there might cause an issue.
+In a rare occasion that you might have a field that contains `[..]`, that might cause an issue.
 
 Please see this blog post, which also explains how we build a form, for more context: https://give.engineering/2018/09/15/form-submission-and-validation-in-playframework.html
 
@@ -130,7 +130,7 @@ import givers.form.Mappings
 val email = Mappings.text.validate("error.email") { s => s.nonEmpty && s.contains("@") }
 ```
 
-Please all predefined mappings in `givers.form.Mappings`.
+Please see all predefined mappings in `givers.form.Mappings`.
 
 
 Develop

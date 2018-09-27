@@ -7,7 +7,7 @@ lazy val generator = (project in file("generator"))
   )
 lazy val `play-json-form` = project in file(".")
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.7"
 
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play" % "2.6.19",

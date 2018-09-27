@@ -149,10 +149,28 @@ object MappingsSpec extends BaseSpec {
     }
 
     "seq" - {
-      "binds invalid" - {
+      "binds empty" - {
         assert(Mappings.seq(Mappings.boolean, nonEmpty = true).bind(JsDefined(JsArray())) == Failure(Mapping.error("error.required")))
         assert(Mappings.seq(Mappings.boolean).bind(JsDefined(JsNull)) == Failure(Mapping.error("error.required")))
         assert(Mappings.seq(Mappings.boolean).bind(JsUndefined("")) == Failure(Mapping.error("error.required")))
+      }
+
+      "binds invalid element" - {
+        val result = Mappings.seq(Mappings.boolean).bind(JsDefined(
+          JsArray(Seq(
+            JsString("invalid"),
+            JsString("true"),
+            JsNumber(2),
+            JsString("false")
+          ))
+        ))
+        val expected = Failure(
+          new ValidationException(Seq(
+            new ValidationMessage("0", "error.boolean"),
+            new ValidationMessage("2", "error.boolean")
+          ))
+        )
+        assert(result == expected)
       }
 
       "binds/unbinds empty array" - {
@@ -170,6 +188,31 @@ object MappingsSpec extends BaseSpec {
     }
 
     "obj" - {
+      "binds invalid" - {
+        case class Simple(b: Seq[Boolean])
+        case class Complex(a: Seq[Simple])
+        val m = Mappings.obj(
+          Complex.apply,
+          Complex.unapply,
+          "a" -> Mappings.seq(Mappings.obj(
+            Simple.apply,
+            Simple.unapply,
+            "b" -> Mappings.seq(Mappings.boolean)
+          ))
+        )
+        val params = Json.obj(
+          "a" -> Seq(Json.obj("b" -> Seq("invalid")), Json.obj("b" -> Seq("invalid", "invalid"))),
+        )
+        val expected = Failure(
+          new ValidationException(Seq(
+            new ValidationMessage("a.0.b.0", "error.boolean"),
+            new ValidationMessage("a.1.b.0", "error.boolean"),
+            new ValidationMessage("a.1.b.1", "error.boolean")
+          ))
+        )
+        assert(m.bind(JsDefined(params)) == expected)
+      }
+
       "binds/unbinds single" - {
         // A case class with one value is a special case because its unapply function doesn't return a tuple, so we explicitly test it.
         case class Obj(a: String)

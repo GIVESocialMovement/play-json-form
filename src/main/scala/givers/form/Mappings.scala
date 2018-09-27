@@ -160,7 +160,17 @@ object Mappings extends ObjectMappings {
             if (items.forall(_.isSuccess)) {
               Success(items.map(_.get))
             } else {
-              Failure(new Exception())
+              Failure {
+               new ValidationException(
+                  items
+                    .zipWithIndex
+                    .collect { case (Failure(e), index) => index -> e }
+                    .flatMap {
+                      case (index, ex :ValidationException) => ex.messages.map { m => m.addPrefix(index.toString) }
+                      case (_, e) => throw e
+                    }
+                )
+              }
             }
           }
 

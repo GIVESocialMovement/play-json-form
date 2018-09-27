@@ -34,3 +34,5 @@ pomIncludeRepository := { _ => false }
 licenses := Seq(("MIT", url("http://opensource.org/licenses/MIT")))
 
 testFrameworks += new TestFramework("utest.runner.Framework")
+
+coverageExcludedPackages := "givers.form.generated.*"

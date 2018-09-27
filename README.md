@@ -65,7 +65,7 @@ Add the below line to your `build.sbt`:
 ```
 resolvers += Resolver.bintrayRepo("givers", "maven")
 
-addSbtPlugin("givers.form" %% "play-json-form" % "0.3.1")
+addSbtPlugin("givers.form" %% "play-json-form" % "0.3.2")
 ```
 
 

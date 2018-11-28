@@ -136,5 +136,5 @@ Please see all predefined mappings in `givers.form.Mappings`.
 Develop
 --------
 
-1. Run `sbt generate/run` in order to generate the classes in `givers.form.generated`.
+1. Run `sbt generator/run` in order to generate the classes in `givers.form.generated`.
 2. Run `sbt test` to run all tests

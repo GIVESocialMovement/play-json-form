@@ -36,14 +36,17 @@ object Main {
         .withParams(PARAM("value", "JsValue").tree)
         .:=(
           BLOCK(
-            REF("convert").APPLY(REF("value"))
-              .DOT("map").APPLY(
-              LAMBDA(PARAM("items").tree).==>(REF("apply").APPLY(
-                parameterTypes.zipWithIndex.map { case (tp, index) =>
-                  REF(s"items($index).asInstanceOf[${tp.name}]")
-                }
-              ))
-            )
+            REF("ObjectMapping")
+              .DOT("convert")
+              .APPLY(REF("value"), REF("fields"))
+              .DOT("map")
+              .APPLY(
+                LAMBDA(PARAM("items").tree).==>(REF("apply").APPLY(
+                  parameterTypes.zipWithIndex.map { case (tp, index) =>
+                    REF(s"items($index).asInstanceOf[${tp.name}]")
+                  }
+                ))
+              )
           )
         ),
       DEF("unbind", "JsValue")
@@ -167,6 +170,7 @@ object Main {
       IMPORT("givers.form.Mapping.Field"),
       IMPORT("givers.form.ObjectMapping"),
       IMPORT("play.api.libs.json.JsValue"),
+      IMPORT("play.api.libs.json.JsObject"),
       IMPORT("play.api.libs.json.Json"),
       IMPORT("scala.util.Try")
     )

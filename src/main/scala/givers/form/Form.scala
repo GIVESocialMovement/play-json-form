@@ -6,10 +6,10 @@ import play.api.libs.json.{JsDefined, JsValue}
 import scala.util.Try
 
 object Form extends Forms {
-  def apply[T](mapping: ObjectMapping[T]) = new Form(mapping)
+  def apply[T](mapping: Mapping[T]) = new Form(mapping)
 }
 
-class Form[T](mapping: ObjectMapping[T]) {
+class Form[T](mapping: Mapping[T]) {
   def bindFromRequest()(implicit request: play.api.mvc.Request[_]): Try[T] = {
     bind {
       request.body match {
@@ -25,6 +25,6 @@ class Form[T](mapping: ObjectMapping[T]) {
   def fill(data: T): FilledForm[T] = new FilledForm(mapping, data)
 }
 
-class FilledForm[T](mapping: ObjectMapping[T], data: T) {
+class FilledForm[T](mapping: Mapping[T], data: T) {
   def toJson = mapping.unbind(data)
 }

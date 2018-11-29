@@ -73,9 +73,8 @@ trait ValueMapping[T] extends Mapping[T] {
   def unbind(value: T): JsValue
 }
 
-trait ObjectMapping[T] extends ValueMapping[T] {
-  def fields: Seq[Field[_]]
-  def convert(value: JsValue): Try[Seq[_]] = {
+object ObjectMapping {
+  def convert(value: JsValue, fields: Seq[Field[_]]): Try[Seq[_]] = {
     val results = fields
       .map { field =>
         field.mapping.bind(value \ field.key)
@@ -93,6 +92,39 @@ trait ObjectMapping[T] extends ValueMapping[T] {
             }
             .flatten
         )
+      }
+    }
+  }
+}
+
+trait ObjectMapping[T] extends ValueMapping[T] { self =>
+  def fields: Seq[Field[_]]
+
+  // This supports processing params in steps.
+  // A real world example:
+  //   we need a currency in order to construct a form that processes an amount.
+  //   Because, for example, KRW is a zero-decimal currency and doesn't need to be multiplied by 100, while
+  //   USD does.
+  def andThen[Q](
+    bind: T => ObjectMapping[Q],
+    unbind: Q => T
+  ): ObjectMapping[Q] = {
+    val transformBind = bind
+    val transformUnbind = unbind
+
+    new ObjectMapping[Q] {
+      override def fields: Seq[Field[_]] = throw new UnsupportedOperationException()
+
+      override def bind(value: JsValue): Try[Q] = {
+        self.bind(value).flatMap { t =>
+          val m = transformBind(t)
+          m.bind(JsDefined(value))
+        }
+      }
+
+      override def unbind(value: Q): JsValue = {
+        val t = transformUnbind(value)
+        transformBind(t).unbind(value).as[JsObject] ++ self.unbind(transformUnbind(value)).as[JsObject]
       }
     }
   }

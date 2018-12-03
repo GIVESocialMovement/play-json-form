@@ -15,6 +15,9 @@ object Mappings extends ObjectMappings {
   ): Mapping[String] = {
     Some
       .apply(new Mapping[String] {
+
+        addError("error.invalid")
+
         def bind(value: JsLookupResult): Try[String] = {
           bind(value.toOption.filterNot(_ == JsNull).getOrElse(JsString("")))
         }
@@ -38,7 +41,11 @@ object Mappings extends ObjectMappings {
         }
       }
       .map { mapping =>
-        mapping.validate("error.maxLength", maxLength)(_.length <= maxLength)
+        if (maxLength != Int.MaxValue) {
+          mapping.validate("error.maxLength", maxLength)(_.length <= maxLength)
+        } else {
+          mapping
+        }
       }
       .map { mapping =>
         if (allowEmpty) {
@@ -50,12 +57,16 @@ object Mappings extends ObjectMappings {
       .get
   }
 
-  val email = text.validate("error.email") { s =>
-    s.nonEmpty && s.contains("@")
+  val email = text(allowEmpty = false).validate("error.email") { s =>
+    s.contains("@")
   }
 
   val boolean: Mapping[Boolean] = boolean()
   def boolean(translateAbsenceToFalse: Boolean = false): Mapping[Boolean] = new Mapping[Boolean] {
+
+    addError("error.required")
+    addError("error.boolean")
+
     def bind(value: JsLookupResult): Try[Boolean] = try {
       value.toOption.filterNot(_ == JsNull) match {
         case Some(v: JsBoolean) => Success(v.value)
@@ -76,9 +87,12 @@ object Mappings extends ObjectMappings {
   }
 
   val longNumber: Mapping[Long] = longNumber()
-  def longNumber(min: Long = Long.MinValue, max: Long = Long.MaxValue): Mapping[Long] = new ValueMapping[Long] {
-    protected[this] def bind(value: JsValue): Try[Long] = try {
-      Success
+  def longNumber(min: Long = Long.MinValue, max: Long = Long.MaxValue): Mapping[Long] = {
+    val m = new ValueMapping[Long] {
+      addError("error.number")
+
+      protected[this] def bind(value: JsValue): Try[Long] = try {
+        Success
           .apply(
             value match {
               case v: JsNumber => v.value.toLong
@@ -86,54 +100,63 @@ object Mappings extends ObjectMappings {
               case _ => throw new Exception()
             }
           )
-          .flatMap { v =>
-            if (v < min) {
-              Failure(Mapping.error("error.min", min))
-            } else if (v > max) {
-              Failure(Mapping.error("error.max", max))
-            } else {
-              Success(v)
-            }
-          }
-    } catch {
-      case _: Exception => Failure(Mapping.error("error.number"))
+      } catch {
+        case _: Exception => Failure(Mapping.error("error.number"))
+      }
+
+      def unbind(value: Long): JsValue = JsNumber(BigDecimal(value))
     }
 
-    def unbind(value: Long): JsValue = JsNumber(BigDecimal(value))
+    if (min != Long.MinValue) {
+      m.validate("error.min", min)(_ >= min)
+    } else if (max != Long.MaxValue) {
+      m.validate("error.max", max)(_ <= max)
+    } else {
+      m
+    }
   }
 
   val number: Mapping[Int] = number()
-  def number(min: Int = Int.MinValue, max: Int = Int.MaxValue): Mapping[Int] = new ValueMapping[Int] {
-    protected[this] def bind(value: JsValue): Try[Int] = try {
+  def number(min: Int = Int.MinValue, max: Int = Int.MaxValue): Mapping[Int] = {
+    val m = new ValueMapping[Int] {
+      addError("error.number")
 
-      Success
-        .apply(
-          value match {
-            case v: JsNumber => v.value.toInt
-            case v: JsString => v.value.toInt
-            case _ => throw new Exception()
-          }
-        )
-        .flatMap { v =>
-          if (v < min) {
-            Failure(Mapping.error("error.min", min))
-          } else if (v > max) {
-            Failure(Mapping.error("error.max", max))
-          } else {
-            Success(v)
-          }
-        }
-    } catch {
-      case _: Exception => Failure(Mapping.error("error.number"))
+      protected[this] def bind(value: JsValue): Try[Int] = try {
+        Success
+          .apply(
+            value match {
+              case v: JsNumber => v.value.toInt
+              case v: JsString => v.value.toInt
+              case _ => throw new Exception()
+            }
+          )
+      } catch {
+        case _: Exception => Failure(Mapping.error("error.number"))
+      }
+
+      def unbind(value: Int): JsValue = JsNumber(BigDecimal(value))
     }
 
-    def unbind(value: Int): JsValue = JsNumber(BigDecimal(value))
+    if (min != Int.MinValue) {
+      m.validate("error.min", min)(_ >= min)
+    } else if (max != Int.MaxValue) {
+      m.validate("error.max", max)(_ <= max)
+    } else {
+      m
+    }
   }
 
   def seq[T](mapping: Mapping[T], nonEmpty: Boolean = false, translateNoneToEmpty: Boolean = false): Mapping[Seq[T]] = {
     Some
       .apply(
         new Mapping[Seq[T]] {
+          addError("error.required")
+          addError("error.invalid")
+
+          mapping.getAllErrors().foreach { error =>
+            addError(ValidationMessage.addPrefix("item", error.key), error.argCount + 1)
+          }
+
           def bind(value: JsLookupResult): Try[Seq[T]] = {
             value.toOption.filterNot(_ == JsNull) match {
               case Some(v) => bind(v)
@@ -166,7 +189,7 @@ object Mappings extends ObjectMappings {
                     .zipWithIndex
                     .collect { case (Failure(e), index) => index -> e }
                     .flatMap {
-                      case (index, ex :ValidationException) => ex.messages.map { m => m.addPrefix(index.toString) }
+                      case (index, ex :ValidationException) => ex.messages.map { m => m.addPrefix("item").prependArg(index) }
                       case (_, e) => throw e
                     }
                 )

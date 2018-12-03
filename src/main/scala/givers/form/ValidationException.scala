@@ -1,20 +1,31 @@
 package givers.form
 
+object ValidationMessage {
+  def addPrefix(prefix: String, base: String) = {
+    if (base.isEmpty) {
+      prefix
+    } else {
+      s"$prefix.$base"
+    }
+  }
+}
 
-class ValidationMessage(val key: String, val message: String, val args: Any*) {
+class ValidationMessage(val key: String, val args: Any*) {
   override def toString = {
-    s"ValidationMessage($key, $message, ${args.mkString(", ")})"
+    s"ValidationMessage($key, ${args.mkString(", ")})"
   }
 
   def addPrefix(prefix: String): ValidationMessage = {
     new ValidationMessage(
-      key = if (key.isEmpty) {
-        prefix
-      } else {
-        s"$prefix.$key"
-      },
-      message = message,
-      args:_*
+      key = ValidationMessage.addPrefix(prefix, key),
+      args = args:_*
+    )
+  }
+
+  def prependArg(arg: Any): ValidationMessage = {
+    new ValidationMessage(
+      key = key,
+      args = Seq(arg) ++ args:_*
     )
   }
 
@@ -24,13 +35,12 @@ class ValidationMessage(val key: String, val message: String, val args: Any*) {
     case that: ValidationMessage =>
       (that canEqual this) &&
         key == that.key &&
-        message == that.message &&
         args == that.args
     case _ => false
   }
 
   override def hashCode(): Int = {
-    val state = Seq(key, message, args)
+    val state = Seq(key, args)
     state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
   }
 }

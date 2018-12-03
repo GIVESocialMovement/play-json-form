@@ -1,5 +1,6 @@
 package givers.form
 
+import givers.form.Mapping.ErrorSpec
 import helpers.BaseSpec
 import play.api.libs.json._
 import utest.Tests
@@ -33,6 +34,10 @@ object MappingsSpec extends BaseSpec {
         assert(Failure(Mapping.error("error.boolean")) == Mappings.boolean.bind(JsDefined(JsString("random"))))
         assert(Failure(Mapping.error("error.boolean")) == Mappings.boolean.bind(JsDefined(JsNumber(100L))))
       }
+
+      "all errors" - {
+        assert(Mappings.boolean.getAllErrors() == Set(ErrorSpec("error.boolean"), ErrorSpec("error.required")))
+      }
     }
 
     "email" - {
@@ -42,7 +47,11 @@ object MappingsSpec extends BaseSpec {
 
       "binds invalid" - {
         assert(Mappings.email.bind(JsDefined(JsString(" ab "))) == Failure(Mapping.error("error.email")))
-        assert(Mappings.email.bind(JsDefined(JsString(""))) == Failure(Mapping.error("error.email")))
+        assert(Mappings.email.bind(JsDefined(JsString(""))) == Failure(Mapping.error("error.required")))
+      }
+
+      "all errors" - {
+        assert(Mappings.email.getAllErrors() == Set(ErrorSpec("error.email"), ErrorSpec("error.invalid"), ErrorSpec("error.required")))
       }
     }
 
@@ -58,6 +67,10 @@ object MappingsSpec extends BaseSpec {
         assert(Mappings.text().bind(JsDefined(JsNumber(100L))) == Failure(Mapping.error("error.invalid")))
         assert(Mappings.text().bind(JsDefined(JsNumber(100L))) == Failure(Mapping.error("error.invalid")))
       }
+
+      "all errors" - {
+        assert(Mappings.text().getAllErrors() == Set(ErrorSpec("error.invalid")))
+      }
     }
 
     "text (trimmed, limit length)" - {
@@ -69,6 +82,11 @@ object MappingsSpec extends BaseSpec {
       "binds invalid" - {
         assert(Mappings.text(maxLength = 3).bind(JsDefined(JsString("aaaa"))) == Failure(Mapping.error("error.maxLength", 3)))
       }
+
+      "all errors" - {
+        println(Mappings.text(maxLength = 3).getAllErrors())
+        assert(Mappings.text(maxLength = 3).getAllErrors() == Set(ErrorSpec("error.invalid"), ErrorSpec("error.maxLength", 1)))
+      }
     }
 
     "text (trimmed, forbids empty)" - {
@@ -79,6 +97,10 @@ object MappingsSpec extends BaseSpec {
 
       "binds empty" - {
         assert(Mappings.text(allowEmpty = false).bind(JsDefined(JsString("  "))) == Failure(Mapping.error("error.required")))
+      }
+
+      "all errors" - {
+        assert(Mappings.text(allowEmpty = false).getAllErrors() == Set(ErrorSpec("error.invalid"), ErrorSpec("error.required")))
       }
     }
 
@@ -100,8 +122,19 @@ object MappingsSpec extends BaseSpec {
       }
 
       "binds invalid" - {
+      "all errors" - {
+        assert(Mappings.longNumber().getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required")))
+        assert(Mappings.longNumber(min = 10L).getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required"), ErrorSpec("error.min", 1)))
+        assert(Mappings.longNumber(max = 10L).getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required"), ErrorSpec("error.max", 1)))
+      }
         assert(Mappings.longNumber().bind(JsDefined(JsBoolean(true))) == Failure(Mapping.error("error.number")))
         assert(Mappings.longNumber().bind(JsDefined(JsString("aaa"))) == Failure(Mapping.error("error.number")))
+      }
+
+      "all errors" - {
+        assert(Mappings.longNumber().getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required")))
+        assert(Mappings.longNumber(min = 10L).getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required"), ErrorSpec("error.min", 1)))
+        assert(Mappings.longNumber(max = 10L).getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required"), ErrorSpec("error.max", 1)))
       }
     }
 
@@ -125,6 +158,12 @@ object MappingsSpec extends BaseSpec {
       "binds invalid" - {
         assert(Mappings.number().bind(JsDefined(JsBoolean(true))) == Failure(Mapping.error("error.number")))
         assert(Mappings.number().bind(JsDefined(JsString("aaa"))) == Failure(Mapping.error("error.number")))
+      }
+
+      "all errors" - {
+        assert(Mappings.number().getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required")))
+        assert(Mappings.number(min = 10).getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required"), ErrorSpec("error.min", 1)))
+        assert(Mappings.number(max = 10).getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required"), ErrorSpec("error.max", 1)))
       }
     }
 
@@ -166,8 +205,8 @@ object MappingsSpec extends BaseSpec {
         ))
         val expected = Failure(
           new ValidationException(Seq(
-            new ValidationMessage("0", "error.boolean"),
-            new ValidationMessage("2", "error.boolean")
+            new ValidationMessage("item.error.boolean", 0),
+            new ValidationMessage("item.error.boolean", 2)
           ))
         )
         assert(result == expected)
@@ -185,6 +224,16 @@ object MappingsSpec extends BaseSpec {
         assert(Mappings.seq(Mappings.boolean).bind(JsDefined(JsArray(Seq(JsBoolean(true), JsBoolean(false))))) == Success(Seq(true, false)))
         assert(Mappings.seq(Mappings.boolean).unbind(Seq(true, false)) == JsArray(Seq(JsBoolean(true), JsBoolean(false))))
       }
+
+      "all errors" - {
+        assert(Mappings.seq(Mappings.number(min = 10)).getAllErrors() == Set(
+          ErrorSpec("error.required"),
+          ErrorSpec("error.invalid"),
+          ErrorSpec("item.error.required", 1),
+          ErrorSpec("item.error.number", 1),
+          ErrorSpec("item.error.min", 2),
+        ))
+      }
     }
 
     "obj" - {
@@ -195,19 +244,20 @@ object MappingsSpec extends BaseSpec {
           Complex.apply,
           Complex.unapply,
           "a" -> Mappings.seq(Mappings.obj(
-            Simple.apply,
-            Simple.unapply,
-            "b" -> Mappings.seq(Mappings.boolean)
-          ))
+              Simple.apply,
+              Simple.unapply,
+              "b" -> Mappings.seq(Mappings.boolean)
+            )
+          )
         )
         val params = Json.obj(
           "a" -> Seq(Json.obj("b" -> Seq("invalid")), Json.obj("b" -> Seq("invalid", "invalid"))),
         )
         val expected = Failure(
           new ValidationException(Seq(
-            new ValidationMessage("a.0.b.0", "error.boolean"),
-            new ValidationMessage("a.1.b.0", "error.boolean"),
-            new ValidationMessage("a.1.b.1", "error.boolean")
+            new ValidationMessage("a.item.b.item.error.boolean", 0, 0),
+            new ValidationMessage("a.item.b.item.error.boolean", 1, 0),
+            new ValidationMessage("a.item.b.item.error.boolean", 1, 1)
           ))
         )
         assert(m.bind(JsDefined(params)) == expected)

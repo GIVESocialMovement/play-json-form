@@ -50,17 +50,17 @@ object ChainObjectMappingSpec extends BaseSpec {
 
       "fails on first" - {
         val json = Json.obj("first" -> "")
-        assert(mapping.bind(JsDefined(json)) == Failure(new ValidationException(Seq(new ValidationMessage("first", "error.required")))))
+        assert(mapping.bind(JsDefined(json)) == Failure(new ValidationException(Seq(new ValidationMessage("first.error.required")))))
       }
 
       "fails on second" - {
         val json = Json.obj("first" -> "test", "second" -> "aaa")
-        assert(mapping.bind(JsDefined(json)) == Failure(new ValidationException(Seq(new ValidationMessage("second", "error.number")))))
+        assert(mapping.bind(JsDefined(json)) == Failure(new ValidationException(Seq(new ValidationMessage("second.error.number")))))
       }
 
       "fails on third" - {
         val json = Json.obj("first" -> "test", "second" -> "123", "third" -> "hello")
-        assert(mapping.bind(JsDefined(json)) == Failure(new ValidationException(Seq(new ValidationMessage("third", "error.boolean")))))
+        assert(mapping.bind(JsDefined(json)) == Failure(new ValidationException(Seq(new ValidationMessage("third.error.boolean")))))
       }
 
       "unbind" - {

@@ -1,15 +1,16 @@
 package givers.form
 
+import givers.form.Mapping.ErrorSpec
 import givers.form.generated.Forms
 import play.api.libs.json.{JsDefined, JsValue}
 
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 object Form extends Forms {
-  def apply[T](mapping: Mapping[T]) = new Form(mapping)
+  def apply[T](errorPrefix: String, mapping: Mapping[T]) = new Form(errorPrefix, mapping)
 }
 
-class Form[T](mapping: Mapping[T]) {
+class Form[T](errorPrefix: String, mapping: Mapping[T]) {
   def bindFromRequest()(implicit request: play.api.mvc.Request[_]): Try[T] = {
     bind {
       request.body match {
@@ -20,9 +21,21 @@ class Form[T](mapping: Mapping[T]) {
     }
   }
 
-  def bind(json: JsValue): Try[T] = mapping.bind(JsDefined(json))
+  def bind(json: JsValue): Try[T] = {
+    mapping
+      .bind(JsDefined(json))
+      .recoverWith { case e: ValidationException =>
+        Failure(e.addPrefix(errorPrefix))
+      }
+  }
 
   def fill(data: T): FilledForm[T] = new FilledForm(mapping, data)
+
+  def getAllErrors(): Set[ErrorSpec] = {
+    mapping.getAllErrors().map { error =>
+      error.addPrefix(errorPrefix)
+    }
+  }
 }
 
 class FilledForm[T](mapping: Mapping[T], data: T) {

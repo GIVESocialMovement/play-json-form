@@ -1,8 +1,9 @@
 package givers.form
 
-import givers.form.Mapping.Field
+import givers.form.Mapping.{ErrorSpec, Field}
 import play.api.libs.json._
 
+import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 
@@ -13,12 +14,27 @@ object Mapping {
     def apply[T](tuple: (String, Mapping[T])): Field[T] = Field(tuple._1, tuple._2)
   }
 
-  def error(message: String, args: Any*): ValidationException = {
-    new ValidationException(Seq(new ValidationMessage("", message, args:_*)))
+  def error(key: String, args: Any*): ValidationException = {
+    new ValidationException(Seq(new ValidationMessage(key, args:_*)))
+  }
+
+  case class ErrorSpec(key: String, argCount: Int = 0) {
+    def addPrefix(prefix: String) = {
+      this.copy(key = ValidationMessage.addPrefix(prefix, key))
+    }
   }
 }
 
 trait Mapping[T] { self =>
+
+  private[this] val allErrors: mutable.Set[ErrorSpec] = mutable.Set.empty
+
+  def addError(error: String, argCount: Int = 0) = {
+    allErrors.add(ErrorSpec(error, argCount))
+  }
+
+  def getAllErrors() = allErrors.toSet
+
   def bind(value: JsLookupResult): Try[T]
   def unbind(value: T): JsValue
 
@@ -29,11 +45,19 @@ trait Mapping[T] { self =>
     )
   }
 
-  def transform[R](bind: T => Try[R], unbind: R => T): Mapping[R] = {
+  def transform[R](bind: T => Try[R], unbind: R => T, errors: ErrorSpec*): Mapping[R] = {
     val forward = bind
     val backward = unbind
 
     new Mapping[R] {
+      self.getAllErrors().foreach { error =>
+        addError(error.key, error.argCount)
+      }
+
+      errors.foreach { error =>
+        addError(error.key, error.argCount)
+      }
+
       def bind(value: JsLookupResult): Try[R] = {
         self.bind(value).flatMap(forward)
       }
@@ -47,6 +71,12 @@ trait Mapping[T] { self =>
   def verifying(error: => String, fn: T => Boolean): Mapping[T] = validate(error)(fn)
 
   def validate(error: => String, args: Any*)(fn: T => Boolean): Mapping[T] = new Mapping[T] {
+
+    self.getAllErrors().foreach { error =>
+      addError(error.key, error.argCount)
+    }
+    addError(error, args.size)
+
     def bind(value: JsLookupResult): Try[T] = {
       self.bind(value).flatMap { v =>
         if (fn(v)) {
@@ -62,6 +92,9 @@ trait Mapping[T] { self =>
 }
 
 trait ValueMapping[T] extends Mapping[T] {
+
+  addError("error.required")
+
   def bind(value: JsLookupResult): Try[T] = {
     value.toOption.filterNot(_ == JsNull) match {
       case Some(v) => bind(v)
@@ -99,6 +132,17 @@ object ObjectMapping {
 
 trait ObjectMapping[T] extends ValueMapping[T] { self =>
   def fields: Seq[Field[_]]
+
+
+  override def getAllErrors(): Set[ErrorSpec] = {
+    fields
+      .flatMap { field =>
+        field.mapping.getAllErrors().map { error =>
+          error.addPrefix(field.key)
+        }
+      }
+      .toSet
+  }
 
   // This supports processing params in steps.
   // A real world example:

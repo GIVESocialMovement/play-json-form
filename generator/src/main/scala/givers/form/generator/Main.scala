@@ -131,6 +131,8 @@ object Main {
       PARAM(s"f$index", s"(String, Mapping[${tp.name}])")
     }
 
+    val errorPrefixParam = PARAM("errorPrefix", s"String")
+
     val funParams = Seq(
       PARAM("apply", s"(${parameterTypes.map(_.name).mkString(", ")}) => T"),
       PARAM(
@@ -145,10 +147,11 @@ object Main {
 
     DEF("apply", s"Form[${objectType.name}]")
       .withTypeParams(Seq(objectType) ++ parameterTypes)
-      .withParams((funParams ++ fields).map(_.tree))
+      .withParams((Seq(errorPrefixParam) ++ funParams ++ fields).map(_.tree))
       .:=(BLOCK(
         NEW(
           "Form",
+          REF(errorPrefixParam.name),
           REF(s"ObjectMappings").DOT("obj").APPLY(
             (funParams ++ fields).map { p => REF(p.name) }
           )

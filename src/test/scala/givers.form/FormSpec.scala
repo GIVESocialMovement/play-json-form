@@ -1,5 +1,6 @@
 package givers.form
 
+import givers.form.Mapping.ErrorSpec
 import helpers.BaseSpec
 import play.api.libs.json._
 import play.api.test.FakeRequest
@@ -12,6 +13,7 @@ object FormSpec extends BaseSpec {
 
   case class TestObj(a: String, b: Int)
   val form = Form(
+    "validation.form",
     TestObj.apply,
     TestObj.unapply,
     "a" -> Mappings.text(allowEmpty = false),
@@ -43,17 +45,25 @@ object FormSpec extends BaseSpec {
           * - {
             val req = FakeRequest("POST", "/").withBody(JsString("random"))
             assert(form.bindFromRequest()(req) == Failure(new ValidationException(Seq(
-              new ValidationMessage("a", "error.required"),
-              new ValidationMessage("b", "error.required")
+              new ValidationMessage("validation.form.a.error.required"),
+              new ValidationMessage("validation.form.b.error.required")
             ))))
           }
         }
       }
 
       "binds and fills" - {
-
         assert(form.fill(obj).toJson == json)
         assert(form.bind(json) == Success(obj))
+      }
+
+      "all errors" - {
+        assert(form.getAllErrors() == Set(
+          ErrorSpec("validation.form.a.error.required"),
+          ErrorSpec("validation.form.a.error.invalid"),
+          ErrorSpec("validation.form.b.error.required"),
+          ErrorSpec("validation.form.b.error.number"),
+        ))
       }
     }
   }

@@ -18,7 +18,7 @@ object Mappings extends ObjectMappings {
 
         addError("error.invalid")
 
-        def bind(value: JsLookupResult): Try[String] = {
+        def bind(value: JsLookupResult, context: Context): Try[String] = {
           bind(value.toOption.filterNot(_ == JsNull).getOrElse(JsString("")))
         }
 
@@ -33,7 +33,7 @@ object Mappings extends ObjectMappings {
       .map { mapping =>
         if (trim) {
           mapping.transform[String](
-            bind = { s => Success(s.trim()) },
+            bind = { (s, _) => Success(s.trim()) },
             unbind = identity
           )
         } else {
@@ -57,7 +57,7 @@ object Mappings extends ObjectMappings {
       .get
   }
 
-  val email = text(allowEmpty = false).validate("error.email") { s =>
+  val email = text.validate("error.email") { s =>
     s.contains("@")
   }
 
@@ -67,7 +67,7 @@ object Mappings extends ObjectMappings {
     addError("error.required")
     addError("error.boolean")
 
-    def bind(value: JsLookupResult): Try[Boolean] = try {
+    def bind(value: JsLookupResult, context: Context): Try[Boolean] = try {
       value.toOption.filterNot(_ == JsNull) match {
         case Some(v: JsBoolean) => Success(v.value)
         case Some(v: JsString) => Success(v.value.toBoolean)
@@ -91,7 +91,7 @@ object Mappings extends ObjectMappings {
     val m = new ValueMapping[Long] {
       addError("error.number")
 
-      protected[this] def bind(value: JsValue): Try[Long] = try {
+      protected[this] def bind(value: JsValue, context: Context): Try[Long] = try {
         Success
           .apply(
             value match {
@@ -121,7 +121,7 @@ object Mappings extends ObjectMappings {
     val m = new ValueMapping[Int] {
       addError("error.number")
 
-      protected[this] def bind(value: JsValue): Try[Int] = try {
+      protected[this] def bind(value: JsValue, context: Context): Try[Int] = try {
         Success
           .apply(
             value match {
@@ -157,9 +157,9 @@ object Mappings extends ObjectMappings {
             addError(ValidationMessage.addPrefix("item", error.key), error.argCount + 1)
           }
 
-          def bind(value: JsLookupResult): Try[Seq[T]] = {
+          def bind(value: JsLookupResult, context: Context): Try[Seq[T]] = {
             value.toOption.filterNot(_ == JsNull) match {
-              case Some(v) => bind(v)
+              case Some(v) => bind(v, context)
               case None =>
                 // In Play's form, a missing key is translated to an empty Seq.
                 if (translateNoneToEmpty) {
@@ -170,15 +170,15 @@ object Mappings extends ObjectMappings {
             }
           }
 
-          protected[this] def bind(value: JsValue): Try[Seq[T]] = {
+          protected[this] def bind(value: JsValue, context: Context): Try[Seq[T]] = {
             value match {
-              case array: JsArray => build(array)
+              case array: JsArray => build(array, context: Context)
               case _ => Failure(Mapping.error("error.invalid"))
             }
           }
 
-          protected[this] def build(array: JsArray): Try[Seq[T]] = {
-            val items = array.value.map { v => mapping.bind(JsDefined(v)) }
+          protected[this] def build(array: JsArray, context: Context): Try[Seq[T]] = {
+            val items = array.value.map { v => mapping.bind(JsDefined(v), context) }
 
             if (items.forall(_.isSuccess)) {
               Success(items.map(_.get))
@@ -211,20 +211,20 @@ object Mappings extends ObjectMappings {
   }
 
   def opt[T](mapping: Mapping[T], translateEmptyStringToNone: Boolean = false): Mapping[Option[T]] = new Mapping[Option[T]] {
-    def bind(value: JsLookupResult): Try[Option[T]] = {
+    def bind(value: JsLookupResult, context: Context): Try[Option[T]] = {
       value.toOption match {
         // In Play's Form, an empty string is converted back to None.
         case Some(v: JsString) if v.value.isEmpty && translateEmptyStringToNone => Success(None)
-        case Some(v) => bind(v)
+        case Some(v) => bind(v, context)
         case None => Success(None)
       }
     }
 
-    protected[this] def bind(value: JsValue): Try[Option[T]] = {
+    protected[this] def bind(value: JsValue, context: Context): Try[Option[T]] = {
       if (value == JsNull) {
         Success(None)
       } else {
-        mapping.bind(JsDefined(value)).map(Some.apply)
+        mapping.bind(JsDefined(value), context).map(Some.apply)
       }
     }
 

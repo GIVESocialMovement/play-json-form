@@ -39,7 +39,7 @@ object ObjectMappingSpec extends BaseSpec {
 
         "succeeds" - {
           val json = Json.obj("a" -> "value", "b" -> "11", "c" -> Json.obj("num" -> "12"))
-          assert(mapping.bind(JsDefined(json)) == Success(TestObj("value", 11, NestedObj(12))))
+          assert(mapping.bind(JsDefined(json), Context.empty) == Success(TestObj("value", 11, NestedObj(12))))
         }
 
         "fails" - {
@@ -49,27 +49,26 @@ object ObjectMappingSpec extends BaseSpec {
             new ValidationMessage("c.num.error.number")
           ))
           val json = Json.obj("a" -> "", "b" -> "9", "c" -> Json.obj("num" -> "nan"))
-          println(mapping.bind(JsDefined(json)))
-          assert(mapping.bind(JsDefined(json)) == Failure(expected))
+          assert(mapping.bind(JsDefined(json), Context.empty) == Failure(expected))
         }
 
         "partially fails" - {
           * - {
             val json = Json.obj("a" -> "", "b" -> "11", "c" -> Json.obj("num" -> "12"))
             val expected = new ValidationException(Seq(new ValidationMessage("a.error.required")))
-            assert(mapping.bind(JsDefined(json)) == Failure(expected))
+            assert(mapping.bind(JsDefined(json), Context.empty) == Failure(expected))
           }
 
           * - {
             val json = Json.obj("a" -> "v", "b" -> "9", "c" -> Json.obj("num" -> "12"))
             val expected = new ValidationException(Seq(new ValidationMessage("b.error.min", 10)))
-            assert(mapping.bind(JsDefined(json)) == Failure(expected))
+            assert(mapping.bind(JsDefined(json), Context.empty) == Failure(expected))
           }
 
           * - {
             val json = Json.obj("a" -> "v", "b" -> "19", "c" -> Json.obj("num" -> ""))
             val expected = new ValidationException(Seq(new ValidationMessage("c.num.error.number")))
-            assert(mapping.bind(JsDefined(json)) == Failure(expected))
+            assert(mapping.bind(JsDefined(json), Context.empty) == Failure(expected))
           }
         }
       }

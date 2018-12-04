@@ -33,12 +33,15 @@ object Main {
     val body = BLOCK(
       VAL("fields").:=(REF("Seq").APPLY(fields.map { f => REF(f.name)})),
       DEF("bind", s"Try[${objectType.name}]")
-        .withParams(PARAM("value", "JsValue").tree)
+        .withParams(Seq(
+          PARAM("value", "JsValue").tree,
+          PARAM("context", "Context").tree,
+        ))
         .:=(
           BLOCK(
             REF("ObjectMapping")
               .DOT("convert")
-              .APPLY(REF("value"), REF("fields"))
+              .APPLY(REF("value"), REF("fields"), REF("context"))
               .DOT("map")
               .APPLY(
                 LAMBDA(PARAM("items").tree).==>(REF("apply").APPLY(
@@ -172,6 +175,7 @@ object Main {
     val objectMappingImports = Seq(
       IMPORT("givers.form.Mapping.Field"),
       IMPORT("givers.form.ObjectMapping"),
+      IMPORT("givers.form.Context"),
       IMPORT("play.api.libs.json.JsValue"),
       IMPORT("play.api.libs.json.JsObject"),
       IMPORT("play.api.libs.json.Json"),

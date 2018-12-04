@@ -35,17 +35,17 @@ trait Mapping[T] { self =>
 
   def getAllErrors() = allErrors.toSet
 
-  def bind(value: JsLookupResult): Try[T]
+  def bind(value: JsLookupResult, context: Context): Try[T]
   def unbind(value: T): JsValue
 
   def pipe[R](bind: T => R, unbind: R => T): Mapping[R] = {
     transform[R](
-      bind = { v => Success(bind(v)) },
+      bind = { (v, _) => Success(bind(v)) },
       unbind = unbind
     )
   }
 
-  def transform[R](bind: T => Try[R], unbind: R => T, errors: ErrorSpec*): Mapping[R] = {
+  def transform[R](bind: (T, Context) => Try[R], unbind: R => T, errors: ErrorSpec*): Mapping[R] = {
     val forward = bind
     val backward = unbind
 
@@ -58,8 +58,8 @@ trait Mapping[T] { self =>
         addError(error.key, error.argCount)
       }
 
-      def bind(value: JsLookupResult): Try[R] = {
-        self.bind(value).flatMap(forward)
+      def bind(value: JsLookupResult, context: Context): Try[R] = {
+        self.bind(value, context).flatMap { t => forward(t, context) }
       }
 
       def unbind(value: R): JsValue = {
@@ -77,8 +77,8 @@ trait Mapping[T] { self =>
     }
     addError(error, args.size)
 
-    def bind(value: JsLookupResult): Try[T] = {
-      self.bind(value).flatMap { v =>
+    def bind(value: JsLookupResult, context: Context): Try[T] = {
+      self.bind(value, context).flatMap { v =>
         if (fn(v)) {
           Success(v)
         } else {
@@ -95,37 +95,39 @@ trait ValueMapping[T] extends Mapping[T] {
 
   addError("error.required")
 
-  def bind(value: JsLookupResult): Try[T] = {
+  def bind(value: JsLookupResult, context: Context): Try[T] = {
     value.toOption.filterNot(_ == JsNull) match {
-      case Some(v) => bind(v)
+      case Some(v) => bind(v, context)
       case None => Failure(Mapping.error("error.required"))
     }
   }
 
-  protected[this] def bind(value: JsValue): Try[T]
+  protected[this] def bind(value: JsValue, context: Context): Try[T]
   def unbind(value: T): JsValue
 }
 
 object ObjectMapping {
-  def convert(value: JsValue, fields: Seq[Field[_]]): Try[Seq[_]] = {
+  def convert(value: JsValue, fields: Seq[Field[_]], context: Context): Try[Seq[_]] = {
     val results = fields
-      .map { field =>
-        field.mapping.bind(value \ field.key)
-      }
-
-    if (results.forall(_.isSuccess)) {
-      Success(results.map(_.get))
-    } else {
-      Failure {
-        new ValidationException(
-          results.zip(fields)
-            .collect {
-              case (Failure(e: ValidationException), field) => e.messages.map(_.addPrefix(field.key))
-              case (Failure(e), field) => throw new Exception(s"Unhandled exception when processing `${field.key}`", e)
-            }
-            .flatten
+      .foldLeft(Map.empty[String, Try[_]]) { case (fs, field) =>
+        fs ++ Seq(
+          field.key -> field.mapping.bind(value \ field.key, Context(fs, Some(context)))
         )
       }
+
+    if (results.forall(_._2.isSuccess)) {
+      Success(results.toSeq.map(_._2.get))
+    } else {
+      val exs = results
+        .toSeq
+        .flatMap {
+          case (_, Success(_)) => None
+          case (key, Failure(e: ValidationException)) => Some(e.messages.map(_.addPrefix(key)))
+          case (_, Failure(NotApplicableException)) => None
+          case (key, Failure(e)) => throw new Exception(s"Unhandled exception when processing `$key`", e)
+        }
+        .flatten
+      Failure(new ValidationException(exs))
     }
   }
 }
@@ -142,35 +144,6 @@ trait ObjectMapping[T] extends ValueMapping[T] { self =>
         }
       }
       .toSet
-  }
-
-  // This supports processing params in steps.
-  // A real world example:
-  //   we need a currency in order to construct a form that processes an amount.
-  //   Because, for example, KRW is a zero-decimal currency and doesn't need to be multiplied by 100, while
-  //   USD does.
-  def andThen[Q](
-    bind: T => ObjectMapping[Q],
-    unbind: Q => T
-  ): ObjectMapping[Q] = {
-    val transformBind = bind
-    val transformUnbind = unbind
-
-    new ObjectMapping[Q] {
-      override def fields: Seq[Field[_]] = throw new UnsupportedOperationException()
-
-      override def bind(value: JsValue): Try[Q] = {
-        self.bind(value).flatMap { t =>
-          val m = transformBind(t)
-          m.bind(JsDefined(value))
-        }
-      }
-
-      override def unbind(value: Q): JsValue = {
-        val t = transformUnbind(value)
-        transformBind(t).unbind(value).as[JsObject] ++ self.unbind(transformUnbind(value)).as[JsObject]
-      }
-    }
   }
 }
 

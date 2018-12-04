@@ -10,6 +10,10 @@ object ValidationMessage {
   }
 }
 
+// IgnoredException is applicable where a field cannot be parsed because another field fails to parse.
+// For example, if we can't parse `currency`, we can't parse `amount`. We can return `Failure(IgnoredException)` for `amount`.
+object NotApplicableException extends RuntimeException
+
 class ValidationMessage(val key: String, val args: Any*) {
   override def toString = {
     s"ValidationMessage($key, ${args.mkString(", ")})"

@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
 
 organization := "givers.form"
 name := "play-json-form"
-version := "0.5.0"
+version := "0.6.0"
 parallelExecution in Test := false
 
 publishMavenStyle := true

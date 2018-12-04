@@ -11,24 +11,24 @@ object MappingSpec extends BaseSpec {
   val tests = Tests {
     "ValueMapping" - {
       val mapping = new ValueMapping[Boolean] {
-        protected[this] def bind(value: JsValue): Try[Boolean] = Success(true)
+        protected[this] def bind(value: JsValue, context: Context): Try[Boolean] = Success(true)
         def unbind(value: Boolean): JsValue = JsBoolean(true)
       }
 
       "binds/unbind" - {
-        assert(mapping.bind(JsDefined(JsString("dontcare"))) == Success(true))
+        assert(mapping.bind(JsDefined(JsString("dontcare")), Context.empty) == Success(true))
         assert(mapping.unbind(false) == JsBoolean(true))
       }
 
       "binds empty" - {
-        assert(mapping.bind(JsUndefined("")) == Failure(Mapping.error("error.required")))
-        assert(mapping.bind(JsDefined(JsNull)) == Failure(Mapping.error("error.required")))
+        assert(mapping.bind(JsUndefined(""), Context.empty) == Failure(Mapping.error("error.required")))
+        assert(mapping.bind(JsDefined(JsNull), Context.empty) == Failure(Mapping.error("error.required")))
       }
     }
 
     "Mapping" - {
       val mapping = new Mapping[String] {
-        def bind(value: JsLookupResult): Try[String] = Success(value.as[String])
+        def bind(value: JsLookupResult, context: Context): Try[String] = Success(value.as[String])
         def unbind(value: String): JsValue = JsString(value)
       }
 
@@ -38,14 +38,14 @@ object MappingSpec extends BaseSpec {
 
         "succeeds" - {
           when(validator.apply(any())).thenReturn(true)
-          assert(validatedMapping.bind(JsDefined(JsString("input"))) == Success("input"))
+          assert(validatedMapping.bind(JsDefined(JsString("input")), Context.empty) == Success("input"))
 
           verify(validator).apply("input")
         }
 
         "fails" - {
           when(validator.apply(any())).thenReturn(false)
-          assert(validatedMapping.bind(JsDefined(JsString("input"))) == Failure(Mapping.error("error")))
+          assert(validatedMapping.bind(JsDefined(JsString("input")), Context.empty) == Failure(Mapping.error("error")))
 
           verify(validator).apply("input")
         }
@@ -53,7 +53,7 @@ object MappingSpec extends BaseSpec {
 
       "transform" - {
         val transformedMapping = mapping.transform[String](
-          bind = { s =>
+          bind = { (s, _) =>
             if (s == "shouldFail") {
               Failure(Mapping.error("error"))
             } else {
@@ -64,8 +64,8 @@ object MappingSpec extends BaseSpec {
         )
 
         "binds" - {
-          assert(transformedMapping.bind(JsDefined(JsString("input"))) == Success("bound input"))
-          assert(transformedMapping.bind(JsDefined(JsString("shouldFail"))) == Failure(Mapping.error("error")))
+          assert(transformedMapping.bind(JsDefined(JsString("input")), Context.empty) == Success("bound input"))
+          assert(transformedMapping.bind(JsDefined(JsString("shouldFail")), Context.empty) == Failure(Mapping.error("error")))
         }
 
         "unbinds" - {

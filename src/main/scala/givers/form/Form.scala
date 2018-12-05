@@ -23,7 +23,7 @@ class Form[T](errorPrefix: String, mapping: Mapping[T]) {
 
   def bind(json: JsValue): Try[T] = {
     mapping
-      .bind(JsDefined(json), Context.empty)
+      .bind(JsDefined(json), BindContext.empty)
       .recoverWith { case e: ValidationException =>
         assert(e.messages.nonEmpty, "The form is misconfigured. UnapplicableException is raised incorrectly.")
         Failure(e.addPrefix(errorPrefix))
@@ -40,5 +40,5 @@ class Form[T](errorPrefix: String, mapping: Mapping[T]) {
 }
 
 class FilledForm[T](mapping: Mapping[T], data: T) {
-  def toJson = mapping.unbind(data)
+  def toJson = mapping.unbind(data, UnbindContext.empty)
 }

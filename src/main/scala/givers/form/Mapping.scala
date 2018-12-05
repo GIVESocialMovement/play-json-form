@@ -35,17 +35,17 @@ trait Mapping[T] { self =>
 
   def getAllErrors() = allErrors.toSet
 
-  def bind(value: JsLookupResult, context: Context): Try[T]
-  def unbind(value: T): JsValue
+  def bind(value: JsLookupResult, context: BindContext): Try[T]
+  def unbind(value: T, context: UnbindContext): JsValue
 
   def pipe[R](bind: T => R, unbind: R => T): Mapping[R] = {
     transform[R](
       bind = { (v, _) => Success(bind(v)) },
-      unbind = unbind
+      unbind = { (v, _) => unbind(v) }
     )
   }
 
-  def transform[R](bind: (T, Context) => Try[R], unbind: R => T, errors: ErrorSpec*): Mapping[R] = {
+  def transform[R](bind: (T, BindContext) => Try[R], unbind: (R, UnbindContext) => T, errors: ErrorSpec*): Mapping[R] = {
     val forward = bind
     val backward = unbind
 
@@ -58,12 +58,12 @@ trait Mapping[T] { self =>
         addError(error.key, error.argCount)
       }
 
-      def bind(value: JsLookupResult, context: Context): Try[R] = {
+      def bind(value: JsLookupResult, context: BindContext): Try[R] = {
         self.bind(value, context).flatMap { t => forward(t, context) }
       }
 
-      def unbind(value: R): JsValue = {
-        self.unbind(backward(value))
+      def unbind(value: R, context: UnbindContext): JsValue = {
+        self.unbind(backward(value, context), context)
       }
     }
   }
@@ -77,7 +77,7 @@ trait Mapping[T] { self =>
     }
     addError(error, args.size)
 
-    def bind(value: JsLookupResult, context: Context): Try[T] = {
+    def bind(value: JsLookupResult, context: BindContext): Try[T] = {
       self.bind(value, context).flatMap { v =>
         if (fn(v)) {
           Success(v)
@@ -87,7 +87,7 @@ trait Mapping[T] { self =>
       }
     }
 
-    def unbind(value: T): JsValue = self.unbind(value)
+    def unbind(value: T, context: UnbindContext): JsValue = self.unbind(value, context)
   }
 }
 
@@ -95,23 +95,23 @@ trait ValueMapping[T] extends Mapping[T] {
 
   addError("error.required")
 
-  def bind(value: JsLookupResult, context: Context): Try[T] = {
+  def bind(value: JsLookupResult, context: BindContext): Try[T] = {
     value.toOption.filterNot(_ == JsNull) match {
       case Some(v) => bind(v, context)
       case None => Failure(Mapping.error("error.required"))
     }
   }
 
-  protected[this] def bind(value: JsValue, context: Context): Try[T]
-  def unbind(value: T): JsValue
+  protected[this] def bind(value: JsValue, context: BindContext): Try[T]
+  def unbind(value: T, context: UnbindContext): JsValue
 }
 
 object ObjectMapping {
-  def convert(value: JsValue, fields: Seq[Field[_]], context: Context): Try[Seq[_]] = {
+  def bind(value: JsValue, fields: Seq[Field[_]], context: BindContext): Try[Seq[_]] = {
     val results = fields
-      .foldLeft(Map.empty[String, Try[_]]) { case (fs, field) =>
-        fs ++ Seq(
-          field.key -> field.mapping.bind(value \ field.key, Context(fs, Some(context)))
+      .foldLeft(Map.empty[String, Try[_]]) { case (map, field) =>
+        map ++ Seq(
+          field.key -> field.mapping.bind(value \ field.key, BindContext(map, Some(context)))
         )
       }
 
@@ -129,6 +129,25 @@ object ObjectMapping {
         .flatten
       Failure(new ValidationException(exs))
     }
+  }
+
+  def unbind(values: Seq[Any], fields: Seq[Field[_]], context: UnbindContext): JsValue = {
+    val currentContext = UnbindContext(
+      current = fields.map(_.key).zip(values).toMap,
+      parentOpt = Some(context)
+    )
+    val fs = fields
+      .zip(values)
+      .map { case (f, v) =>
+        println(f.mapping)
+        f.key -> unbind(f.mapping, v, currentContext)
+      }
+
+    JsObject(fs.toList)
+  }
+
+  private[this] def unbind[T](mapping: Mapping[T], value: Any, context: UnbindContext) = {
+    mapping.unbind(value.asInstanceOf[T], context)
   }
 }
 

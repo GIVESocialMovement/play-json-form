@@ -60,7 +60,6 @@ object FormSpec extends BaseSpec {
       "all errors" - {
         assert(form.getAllErrors() == Set(
           ErrorSpec("validation.form.a.error.required"),
-          ErrorSpec("validation.form.a.error.invalid"),
           ErrorSpec("validation.form.b.error.required"),
           ErrorSpec("validation.form.b.error.number"),
         ))

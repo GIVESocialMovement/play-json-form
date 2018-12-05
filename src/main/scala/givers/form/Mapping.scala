@@ -139,7 +139,6 @@ object ObjectMapping {
     val fs = fields
       .zip(values)
       .map { case (f, v) =>
-        println(f.mapping)
         f.key -> unbind(f.mapping, v, currentContext)
       }
 

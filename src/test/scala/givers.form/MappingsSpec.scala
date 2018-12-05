@@ -51,7 +51,7 @@ object MappingsSpec extends BaseSpec {
       }
 
       "all errors" - {
-        assert(Mappings.email.getAllErrors() == Set(ErrorSpec("error.email"), ErrorSpec("error.invalid")))
+        assert(Mappings.email.getAllErrors() == Set(ErrorSpec("error.email")))
       }
     }
 
@@ -62,14 +62,23 @@ object MappingsSpec extends BaseSpec {
         assert(Mappings.text(trim = false).unbind(" txt ", UnbindContext.empty) == JsString(" txt "))
       }
 
+      "binds coerce" - {
+        assert(Mappings.text().bind(JsDefined(JsBoolean(true)), BindContext.empty) == Success("true"))
+        assert(Mappings.text().bind(JsDefined(JsNumber(100L)), BindContext.empty) == Success("100"))
+        assert(Mappings.text().bind(JsDefined(JsArray(Seq(JsNumber(100L)))), BindContext.empty) == Success("[100]"))
+        assert(Mappings.text().bind(JsDefined(Json.obj("a" -> 123)), BindContext.empty) == Success("""{"a":123}"""))
+      }
+
       "binds invalid" - {
-        assert(Mappings.text().bind(JsDefined(JsBoolean(true)), BindContext.empty) == Failure(Mapping.error("error.invalid")))
-        assert(Mappings.text().bind(JsDefined(JsNumber(100L)), BindContext.empty) == Failure(Mapping.error("error.invalid")))
-        assert(Mappings.text().bind(JsDefined(JsNumber(100L)), BindContext.empty) == Failure(Mapping.error("error.invalid")))
+        assert(Mappings.text(coerceToString = false).bind(JsDefined(JsBoolean(true)), BindContext.empty) == Failure(Mapping.error("error.invalid")))
+        assert(Mappings.text(coerceToString = false).bind(JsDefined(JsNumber(100L)), BindContext.empty) == Failure(Mapping.error("error.invalid")))
+        assert(Mappings.text(coerceToString = false).bind(JsDefined(JsArray(Seq(JsNumber(100L)))), BindContext.empty) == Failure(Mapping.error("error.invalid")))
+        assert(Mappings.text(coerceToString = false).bind(JsDefined(Json.obj("a" -> 123)), BindContext.empty) == Failure(Mapping.error("error.invalid")))
       }
 
       "all errors" - {
-        assert(Mappings.text().getAllErrors() == Set(ErrorSpec("error.invalid")))
+        assert(Mappings.text().getAllErrors() == Set.empty)
+        assert(Mappings.text(coerceToString = false).getAllErrors() == Set(ErrorSpec("error.invalid")))
       }
     }
 
@@ -84,8 +93,7 @@ object MappingsSpec extends BaseSpec {
       }
 
       "all errors" - {
-        println(Mappings.text(maxLength = 3).getAllErrors())
-        assert(Mappings.text(maxLength = 3).getAllErrors() == Set(ErrorSpec("error.invalid"), ErrorSpec("error.maxLength", 1)))
+        assert(Mappings.text(maxLength = 3).getAllErrors() == Set(ErrorSpec("error.maxLength", 1)))
       }
     }
 
@@ -100,7 +108,7 @@ object MappingsSpec extends BaseSpec {
       }
 
       "all errors" - {
-        assert(Mappings.text(allowEmpty = false).getAllErrors() == Set(ErrorSpec("error.invalid"), ErrorSpec("error.required")))
+        assert(Mappings.text(allowEmpty = false).getAllErrors() == Set(ErrorSpec("error.required")))
       }
     }
 

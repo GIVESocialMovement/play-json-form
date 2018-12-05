@@ -18,7 +18,7 @@ object Mappings extends ObjectMappings {
 
         addError("error.invalid")
 
-        def bind(value: JsLookupResult, context: Context): Try[String] = {
+        def bind(value: JsLookupResult, context: BindContext): Try[String] = {
           bind(value.toOption.filterNot(_ == JsNull).getOrElse(JsString("")))
         }
 
@@ -28,13 +28,13 @@ object Mappings extends ObjectMappings {
           case _: Exception => Failure(Mapping.error("error.invalid"))
         }
 
-        def unbind(value: String): JsValue = JsString(value)
+        def unbind(value: String, context: UnbindContext): JsValue = JsString(value)
       })
       .map { mapping =>
         if (trim) {
           mapping.transform[String](
             bind = { (s, _) => Success(s.trim()) },
-            unbind = identity
+            unbind = { (v, _) => v }
           )
         } else {
           mapping
@@ -67,7 +67,7 @@ object Mappings extends ObjectMappings {
     addError("error.required")
     addError("error.boolean")
 
-    def bind(value: JsLookupResult, context: Context): Try[Boolean] = try {
+    def bind(value: JsLookupResult, context: BindContext): Try[Boolean] = try {
       value.toOption.filterNot(_ == JsNull) match {
         case Some(v: JsBoolean) => Success(v.value)
         case Some(v: JsString) => Success(v.value.toBoolean)
@@ -83,7 +83,7 @@ object Mappings extends ObjectMappings {
       case _: Exception => Failure(Mapping.error("error.boolean"))
     }
 
-    def unbind(value: Boolean): JsValue = JsBoolean(value)
+    def unbind(value: Boolean, context: UnbindContext): JsValue = JsBoolean(value)
   }
 
   val longNumber: Mapping[Long] = longNumber()
@@ -91,7 +91,7 @@ object Mappings extends ObjectMappings {
     val m = new ValueMapping[Long] {
       addError("error.number")
 
-      protected[this] def bind(value: JsValue, context: Context): Try[Long] = try {
+      protected[this] def bind(value: JsValue, context: BindContext): Try[Long] = try {
         Success
           .apply(
             value match {
@@ -104,7 +104,7 @@ object Mappings extends ObjectMappings {
         case _: Exception => Failure(Mapping.error("error.number"))
       }
 
-      def unbind(value: Long): JsValue = JsNumber(BigDecimal(value))
+      def unbind(value: Long, context: UnbindContext): JsValue = JsNumber(BigDecimal(value))
     }
 
     if (min != Long.MinValue) {
@@ -121,7 +121,7 @@ object Mappings extends ObjectMappings {
     val m = new ValueMapping[Int] {
       addError("error.number")
 
-      protected[this] def bind(value: JsValue, context: Context): Try[Int] = try {
+      protected[this] def bind(value: JsValue, context: BindContext): Try[Int] = try {
         Success
           .apply(
             value match {
@@ -134,7 +134,7 @@ object Mappings extends ObjectMappings {
         case _: Exception => Failure(Mapping.error("error.number"))
       }
 
-      def unbind(value: Int): JsValue = JsNumber(BigDecimal(value))
+      def unbind(value: Int, context: UnbindContext): JsValue = JsNumber(BigDecimal(value))
     }
 
     if (min != Int.MinValue) {
@@ -157,7 +157,7 @@ object Mappings extends ObjectMappings {
             addError(ValidationMessage.addPrefix("item", error.key), error.argCount + 1)
           }
 
-          def bind(value: JsLookupResult, context: Context): Try[Seq[T]] = {
+          def bind(value: JsLookupResult, context: BindContext): Try[Seq[T]] = {
             value.toOption.filterNot(_ == JsNull) match {
               case Some(v) => bind(v, context)
               case None =>
@@ -170,14 +170,14 @@ object Mappings extends ObjectMappings {
             }
           }
 
-          protected[this] def bind(value: JsValue, context: Context): Try[Seq[T]] = {
+          protected[this] def bind(value: JsValue, context: BindContext): Try[Seq[T]] = {
             value match {
-              case array: JsArray => build(array, context: Context)
+              case array: JsArray => build(array, context: BindContext)
               case _ => Failure(Mapping.error("error.invalid"))
             }
           }
 
-          protected[this] def build(array: JsArray, context: Context): Try[Seq[T]] = {
+          protected[this] def build(array: JsArray, context: BindContext): Try[Seq[T]] = {
             val items = array.value.map { v => mapping.bind(JsDefined(v), context) }
 
             if (items.forall(_.isSuccess)) {
@@ -197,7 +197,7 @@ object Mappings extends ObjectMappings {
             }
           }
 
-          def unbind(value: Seq[T]): JsValue = JsArray(value.map(mapping.unbind))
+          def unbind(value: Seq[T], context: UnbindContext): JsValue = JsArray(value.map { v => mapping.unbind(v, context) })
         }
       )
       .map { mapping =>
@@ -211,7 +211,7 @@ object Mappings extends ObjectMappings {
   }
 
   def opt[T](mapping: Mapping[T], translateEmptyStringToNone: Boolean = false): Mapping[Option[T]] = new Mapping[Option[T]] {
-    def bind(value: JsLookupResult, context: Context): Try[Option[T]] = {
+    def bind(value: JsLookupResult, context: BindContext): Try[Option[T]] = {
       value.toOption match {
         // In Play's Form, an empty string is converted back to None.
         case Some(v: JsString) if v.value.isEmpty && translateEmptyStringToNone => Success(None)
@@ -220,7 +220,7 @@ object Mappings extends ObjectMappings {
       }
     }
 
-    protected[this] def bind(value: JsValue, context: Context): Try[Option[T]] = {
+    protected[this] def bind(value: JsValue, context: BindContext): Try[Option[T]] = {
       if (value == JsNull) {
         Success(None)
       } else {
@@ -228,8 +228,8 @@ object Mappings extends ObjectMappings {
       }
     }
 
-    def unbind(value: Option[T]): JsValue = {
-      value.map(mapping.unbind).getOrElse(JsNull)
+    def unbind(value: Option[T], context: UnbindContext): JsValue = {
+      value.map { v => mapping.unbind(v, context) }.getOrElse(JsNull)
     }
   }
 }

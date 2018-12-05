@@ -35,12 +35,12 @@ object Main {
       DEF("bind", s"Try[${objectType.name}]")
         .withParams(Seq(
           PARAM("value", "JsValue").tree,
-          PARAM("context", "Context").tree,
+          PARAM("context", "BindContext").tree,
         ))
         .:=(
           BLOCK(
             REF("ObjectMapping")
-              .DOT("convert")
+              .DOT("bind")
               .APPLY(REF("value"), REF("fields"), REF("context"))
               .DOT("map")
               .APPLY(
@@ -53,22 +53,25 @@ object Main {
           )
         ),
       DEF("unbind", "JsValue")
-        .withParams(PARAM("value", s"${objectType.name}").tree)
+        .withParams(
+          Seq(
+            PARAM("value", s"${objectType.name}").tree,
+            PARAM("context", "UnbindContext").tree,
+          )
+        )
         .:=(
           BLOCK(
-            VAL("values").:=(REF("unapply").APPLY(REF("value")).DOT("get")),
-            REF("Json").DOT("obj").APPLY(
-              fields.zipWithIndex.map { case (field, index) =>
-                TUPLE(
-                  REF(field.name).DOT("key"),
-                  if (fields.size == 1) {
-                    REF(field.name).DOT("mapping").DOT("unbind").APPLY(REF("values"))
-                  } else {
-                    REF(field.name).DOT("mapping").DOT("unbind").APPLY(REF("values").DOT(s"_${index + 1}"))
-                  }
-                )
+            VAL("valueTuple").:=(REF("unapply").APPLY(REF("value")).DOT("get")),
+            VAL("values").:=(
+              if (parameterTypes.size == 1) {
+                REF("Seq").APPLY(REF("valueTuple"))
+              } else {
+                REF("valueTuple").DOT("productIterator").DOT("toList")
               }
-            )
+            ),
+            REF("ObjectMapping")
+              .DOT("unbind")
+                .APPLY(REF("values"), REF("fields"), REF("context"))
           )
         )
     )
@@ -175,7 +178,8 @@ object Main {
     val objectMappingImports = Seq(
       IMPORT("givers.form.Mapping.Field"),
       IMPORT("givers.form.ObjectMapping"),
-      IMPORT("givers.form.Context"),
+      IMPORT("givers.form.BindContext"),
+      IMPORT("givers.form.UnbindContext"),
       IMPORT("play.api.libs.json.JsValue"),
       IMPORT("play.api.libs.json.JsObject"),
       IMPORT("play.api.libs.json.Json"),

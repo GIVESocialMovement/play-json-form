@@ -76,11 +76,8 @@ object ComplexObjectMappingSpec extends BaseSpec {
       "all errors" - {
         assert(mapping.getAllErrors() == Set(
           ErrorSpec("first.error.required"),
-          ErrorSpec("first.error.invalid"),
           ErrorSpec("second.error.required"),
-          ErrorSpec("second.error.invalid"),
           ErrorSpec("nested.third.error.required"),
-          ErrorSpec("nested.third.error.invalid")
         ))
       }
     }

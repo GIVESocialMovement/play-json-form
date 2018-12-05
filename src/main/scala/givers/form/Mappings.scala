@@ -11,12 +11,15 @@ object Mappings extends ObjectMappings {
   def text(
     trim: Boolean = true,
     allowEmpty: Boolean = true,
-    maxLength: Int = Int.MaxValue
+    maxLength: Int = Int.MaxValue,
+    coerceToString: Boolean = true
   ): Mapping[String] = {
     Some
       .apply(new Mapping[String] {
 
-        addError("error.invalid")
+        if (!coerceToString) {
+          addError("error.invalid")
+        }
 
         def bind(value: JsLookupResult, context: BindContext): Try[String] = {
           bind(value.toOption.filterNot(_ == JsNull).getOrElse(JsString("")))
@@ -25,7 +28,19 @@ object Mappings extends ObjectMappings {
         protected[this] def bind(value: JsValue): Try[String] = try {
           Success(value.as[String])
         } catch {
-          case _: Exception => Failure(Mapping.error("error.invalid"))
+          case _: Exception =>
+            if (coerceToString) {
+              Success(value match {
+                case v: JsString => v.value
+                case v: JsBoolean => v.value.toString
+                case v: JsNumber => v.value.toString
+                case v: JsArray => v.toString
+                case JsNull => ""
+                case v: JsObject => v.toString
+              })
+            } else {
+              Failure(Mapping.error("error.invalid"))
+            }
         }
 
         def unbind(value: String, context: UnbindContext): JsValue = JsString(value)

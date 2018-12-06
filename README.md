@@ -60,7 +60,7 @@ new Mapping[String] {
 }
 ```
 
-The work is still tedious but much less tedious than nothing. We are open to hear about a better design.
+The work is still tedious but much less tedious than without one. We are open to hear about a better design.
 
 
 ### Map a value that depends on another value

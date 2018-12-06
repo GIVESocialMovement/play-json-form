@@ -1,7 +1,7 @@
 package givers.form
 
 import givers.form.Mapping.ErrorSpec
-import helpers.BaseSpec
+import givers.form.helpers.BaseSpec
 import play.api.libs.json._
 import utest.Tests
 import utest._
@@ -129,12 +129,13 @@ object MappingsSpec extends BaseSpec {
         assert(Mappings.longNumber(max = 10L).bind(JsDefined(JsNumber(11L)), BindContext.empty) == Failure(Mapping.error("error.max", 10L)))
       }
 
-      "binds invalid" - {
       "all errors" - {
         assert(Mappings.longNumber().getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required")))
         assert(Mappings.longNumber(min = 10L).getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required"), ErrorSpec("error.min", 1)))
         assert(Mappings.longNumber(max = 10L).getAllErrors() == Set(ErrorSpec("error.number"), ErrorSpec("error.required"), ErrorSpec("error.max", 1)))
       }
+
+      "binds invalid" - {
         assert(Mappings.longNumber().bind(JsDefined(JsBoolean(true)), BindContext.empty) == Failure(Mapping.error("error.number")))
         assert(Mappings.longNumber().bind(JsDefined(JsString("aaa")), BindContext.empty) == Failure(Mapping.error("error.number")))
       }
@@ -216,8 +217,8 @@ object MappingsSpec extends BaseSpec {
         )
         val expected = Failure(
           new ValidationException(Seq(
-            new ValidationMessage("item.error.boolean", 0),
-            new ValidationMessage("item.error.boolean", 2)
+            new ValidationMessage("item.error.boolean", 1),
+            new ValidationMessage("item.error.boolean", 3)
           ))
         )
         assert(result == expected)
@@ -266,9 +267,9 @@ object MappingsSpec extends BaseSpec {
         )
         val expected = Failure(
           new ValidationException(Seq(
-            new ValidationMessage("a.item.b.item.error.boolean", 0, 0),
-            new ValidationMessage("a.item.b.item.error.boolean", 1, 0),
-            new ValidationMessage("a.item.b.item.error.boolean", 1, 1)
+            new ValidationMessage("a.item.b.item.error.boolean", 1, 1),
+            new ValidationMessage("a.item.b.item.error.boolean", 2, 1),
+            new ValidationMessage("a.item.b.item.error.boolean", 2, 2)
           ))
         )
         assert(m.bind(JsDefined(params), BindContext.empty) == expected)

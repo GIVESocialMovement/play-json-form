@@ -16,17 +16,20 @@ object HomeController {
 
   val price = text.transform[Long](
     bind = {
-      case priceRegex(whole, decimals) => Success(whole.toLong * 100 + decimals.toLong)
+      case (priceRegex(whole, decimals), _) => Success(whole.toLong * 100 + decimals.toLong)
       case _ => Failure(Mapping.error("error.number"))
     },
-    unbind = { cents => s"${cents / 100}.${(cents % 100).formatted("%02d")}" }
+    unbind = { (cents, _) => s"${cents / 100}.${(cents % 100).formatted("%02d")}" }
   )
 
   val form = Form(
-    mapping(
+    "validation.home.create",
+    obj(
+      Product.apply,
+      Product.unapply,
       "name" -> text(allowEmpty = false),
       "price" -> price
-    )(Product.apply)(Product.unapply)
+    )
   )
 }
 
@@ -50,7 +53,7 @@ class HomeController @Inject()()(
         println(data)
         Ok(Json.obj("success" -> true))
       case Failure(e: ValidationException) =>
-        Ok(Json.obj("success" -> false, "messages" -> e.messages.map { m => s"${m.key}.${m.message}" }))
+        Ok(Json.obj("success" -> false, "messages" -> e.messages.map { m => m.key }))
       case Failure(e) =>
         Ok(Json.obj("success" -> false, "messages" -> Seq(e.getMessage)))
     }

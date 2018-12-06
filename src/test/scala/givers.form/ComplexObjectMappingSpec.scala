@@ -1,7 +1,7 @@
 package givers.form
 
 import givers.form.Mapping.ErrorSpec
-import helpers.BaseSpec
+import givers.form.helpers.BaseSpec
 import play.api.libs.json.{JsDefined, Json}
 import utest.{Tests, _}
 

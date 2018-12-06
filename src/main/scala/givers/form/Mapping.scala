@@ -109,17 +109,17 @@ trait ValueMapping[T] extends Mapping[T] {
 object ObjectMapping {
   def bind(value: JsValue, fields: Seq[Field[_]], context: BindContext): Try[Seq[_]] = {
     val results = fields
-      .foldLeft(Map.empty[String, Try[_]]) { case (map, field) =>
+      .foldLeft(mutable.LinkedHashMap.empty[String, Try[_]]) { case (map, field) =>
         map ++ Seq(
           field.key -> field.mapping.bind(value \ field.key, BindContext(map, Some(context)))
         )
       }
 
     if (results.forall(_._2.isSuccess)) {
-      Success(results.toSeq.map(_._2.get))
+      Success(results.toList.map(_._2.get))
     } else {
       val exs = results
-        .toSeq
+        .toList
         .flatMap {
           case (_, Success(_)) => None
           case (key, Failure(e: ValidationException)) => Some(e.messages.map(_.addPrefix(key)))

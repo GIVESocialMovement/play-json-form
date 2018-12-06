@@ -1,4 +1,4 @@
-package helpers
+package givers.form.helpers
 
 import org.mockito.ArgumentMatcher
 import org.mockito.internal.progress.ThreadSafeMockingProgress
@@ -8,7 +8,7 @@ import utest.TestSuite
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-abstract class BaseSpec extends TestSuite {
+private[form] abstract class BaseSpec extends TestSuite {
   def mock[T](implicit m: ClassTag[T]): T = org.mockito.Mockito.mock(m.runtimeClass.asInstanceOf[Class[T]])
 
   def any[T]() = org.mockito.ArgumentMatchers.any[T]()

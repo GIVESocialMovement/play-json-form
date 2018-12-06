@@ -43,7 +43,7 @@ Advanced and experimental features
 
 At GIVE.asia, we have more than 20 forms, each of which has several fields. It's tedious to ensure every error message is translated. Previously, what we did is to writing tests on controllers where we send requests with invalid input. It was odd to test the whole path of HTTP request in order to verify that our error messages are translated. So, we've come up with a new way of ensuring every error message is translated.
 
-`Form.getAllErrors()` conveniently generates all possible validation errors. However, when building a `Mapping`, we need to properly code. For example:
+`Form.getAllErrors()` conveniently generates all possible validation errors. However, when building a `Mapping`, we need to properly code all the possible validation errors. For example:
 
 ```
 new Mapping[String] {
@@ -60,7 +60,7 @@ new Mapping[String] {
 }
 ```
 
-We've explored other options to implement this, but we can't figure out a better one.
+The work is still tedious but much less tedious than nothing. We are open to hear about a better design.
 
 
 ### Map a value that depends on another value
@@ -93,6 +93,7 @@ new Mapping[String] {
 ```
 
 The design is a little awkward. But it hides complexity from the user. We are open to hear about a better design.
+
 
 Important compatibility notes
 ------------------------------

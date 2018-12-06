@@ -36,6 +36,64 @@ backward compatibility is to make `Mapping.unbind` return `JsObject` and provide
 `JsObject` to `Map[String, String]`.
 
 
+Advanced and experimental features
+-----------------------------------
+
+### List all possible validation errors
+
+At GIVE.asia, we have more than 20 forms, each of which has several fields. It's tedious to ensure every error message is translated. Previously, what we did is to writing tests on controllers where we send requests with invalid input. It was odd to test the whole path of HTTP request in order to verify that our error messages are translated. So, we've come up with a new way of ensuring every error message is translated.
+
+`Form.getAllErrors()` conveniently generates all possible validation errors. However, when building a `Mapping`, we need to properly code. For example:
+
+```
+new Mapping[String] {
+  addError("error.invalid")
+
+  def bind(value: JsLookupResult, context: BindContext): Try[String] = {
+    // Do something
+    Failure(Mapping.error("error.invalid"))
+  }
+  
+  def unbind(value: String, context: UnbindContext): JsValue = {
+    // Do something
+  }
+}
+```
+
+We've explored other options to implement this, but we can't figure out a better one.
+
+
+### Map a value that depends on another value
+
+At GIVE.asia, we have the use case where we want to convert an amount from `String` (as in `1,000.53` or `1,000`) to cents, which is `Long`. However, we can't convert it unless we know the currency first. Because, for a two-decimal currency, we will multiply the value by 100. But, for a zero-decimal currency, we won't. It follows [the guideline by Stripe](https://stripe.com/docs/currencies#zero-decimal).
+
+One simple solution is to make 2 forms. The first form processes the currency. Then, we use the currency to create the second form. That's clunky.
+
+Our solution is that we offer `BindContext` which allows `Mapping` to access its context, or, in other words, the values of its peers. For example:
+
+```
+new Mapping[String] {
+  def bind(value: JsLookupResult, context: BindContext): Try[Long] = {
+    context.get("currency") match {
+      case Some(currency: Currency) =>
+        if (currency.isZeroDecimal) {
+          Success(convertAmountWithZeroDecimal(value))
+        } else {
+          Success(convertAmountWithTwoDecimal(value))
+        }
+      // The currency field might fail to be parsed. In this case, this mapping is not applicable.
+      case _ => Failure(NotApplicationException) 
+    }
+  }
+  
+  def unbind(value: String, context: UnbindContext): JsValue = {
+    // Do something
+  }
+}
+```
+
+The design is a little awkward. But it hides complexity from the user. We are open to hear about a better design.
+
 Important compatibility notes
 ------------------------------
 
@@ -43,6 +101,7 @@ Since we aim to facilitate the migration from Play's Form, there are certain cou
 
 The below are the behaviours that you need to enable explicitly:
 
+* Set `coerceToString` to `true` in order to make `text` convert any type (e.g. `JsNumber`) to `String`.
 * Set `translateNoneToEmpty` to `true` in order to make `seq` accept the absence of the value as `Seq.empty` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/Form.scala#L683).
 * Set `translateEmptyStringToNone` to `true` in order to make `opt(text)` translate an empty string to `None` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/Form.scala#L813).
 * Set `translateAbsenceToFalse` to `true` in order to make `boolean` translate the absence of the key as `false` [ref](https://github.com/playframework/playframework/blob/4021237f91b0e2fd488a07a845e7c19ada5d1be7/framework/src/play/src/main/scala/play/api/data/format/Format.scala#L181).

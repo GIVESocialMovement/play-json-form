@@ -1,6 +1,6 @@
 package givers.form
 
-import helpers.BaseSpec
+import givers.form.helpers.BaseSpec
 import play.api.libs.json._
 import utest.Tests
 import utest._

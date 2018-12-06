@@ -79,7 +79,9 @@ object Mappings extends ObjectMappings {
   val boolean: Mapping[Boolean] = boolean()
   def boolean(translateAbsenceToFalse: Boolean = false): Mapping[Boolean] = new Mapping[Boolean] {
 
-    addError("error.required")
+    if (!translateAbsenceToFalse) {
+      addError("error.required")
+    }
     addError("error.boolean")
 
     def bind(value: JsLookupResult, context: BindContext): Try[Boolean] = try {
@@ -165,7 +167,9 @@ object Mappings extends ObjectMappings {
     Some
       .apply(
         new Mapping[Seq[T]] {
-          addError("error.required")
+          if (!translateNoneToEmpty) {
+            addError("error.required")
+          }
           addError("error.invalid")
 
           mapping.getAllErrors().foreach { error =>
@@ -204,7 +208,7 @@ object Mappings extends ObjectMappings {
                     .zipWithIndex
                     .collect { case (Failure(e), index) => index -> e }
                     .flatMap {
-                      case (index, ex :ValidationException) => ex.messages.map { m => m.addPrefix("item").prependArg(index) }
+                      case (index, ex :ValidationException) => ex.messages.map { m => m.addPrefix("item").prependArg(index + 1) }
                       case (_, e) => throw e
                     }
                 )

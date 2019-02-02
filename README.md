@@ -125,7 +125,7 @@ Add the below line to your `build.sbt`:
 ```
 resolvers += Resolver.bintrayRepo("givers", "maven")
 
-addSbtPlugin("givers.form" %% "play-json-form" % "0.8.0")
+libraryDependencies += "givers.form" %% "play-json-form" % "0.8.0"
 ```
 
 The artifacts are hosted here: https://bintray.com/givers/maven/play-json-form

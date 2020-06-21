@@ -5,7 +5,7 @@ JSON Form for Playframework
 [![codecov](https://codecov.io/gh/GIVESocialMovement/play-json-form/branch/master/graph/badge.svg)](https://codecov.io/gh/GIVESocialMovement/play-json-form)
 [![Gitter chat](https://badges.gitter.im/GIVE-asia/gitter.png)](https://gitter.im/GIVE-asia/Lobby)
 
-This is a replacement of [Play's form submission and validation](https://www.playframework.com/documentation/2.6.x/ScalaForms).
+This is a replacement of [Play's form submission and validation](https://www.playframework.com/documentation/2.8.x/ScalaForms).
 
 The library is inherently compatible with JSON, as in the conversion between `JsValue` and a case class is symmetric.
 In contrast, [The standard Play's form library](https://www.playframework.com/documentation/2.6.x/ScalaForms) doesn't hold the symmetry property when converting nested objects and arrays.
@@ -125,7 +125,7 @@ Add the below line to your `build.sbt`:
 ```
 resolvers += Resolver.bintrayRepo("givers", "maven")
 
-libraryDependencies += "givers.form" %% "play-json-form" % "0.8.0"
+libraryDependencies += "givers.form" %% "play-json-form" % "0.9.0"
 ```
 
 The artifacts are hosted here: https://bintray.com/givers/maven/play-json-form

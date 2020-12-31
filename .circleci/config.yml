@@ -18,8 +18,10 @@ jobs:
           keys:
           - target-v1-{{ .Branch }}
           - target-v1
-      - run: sbt coverage test coverageReport
-      - run: bash <(curl -s https://codecov.io/bash) -Z
+      - run: sbt test
+# For some reason, sbt-scoverage doesn't work with sbt 1.3.*
+#      - run: sbt coverage test coverageReport
+#      - run: bash <(curl -s https://codecov.io/bash) -Z
       - save_cache:
           paths:
             - target

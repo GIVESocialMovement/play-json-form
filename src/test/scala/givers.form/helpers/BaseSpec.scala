@@ -17,7 +17,7 @@ private[form] abstract class BaseSpec extends TestSuite {
   })
   def varArgsThat[T](fn: Seq[T] => Boolean): T = {
     ThreadSafeMockingProgress.mockingProgress().getArgumentMatcherStorage.reportMatcher(new ArgumentMatcher[mutable.WrappedArray[T]] {
-      override def matches(argument: mutable.WrappedArray[T]) = fn(argument)
+      override def matches(argument: mutable.WrappedArray[T]) = fn(argument.toSeq)
     })
     null.asInstanceOf[T]
   }

@@ -197,7 +197,7 @@ object Mappings extends ObjectMappings {
           }
 
           protected[this] def build(array: JsArray, context: BindContext): Try[Seq[T]] = {
-            val items = array.value.map { v => mapping.bind(JsDefined(v), context) }
+            val items = array.value.toSeq.map { v => mapping.bind(JsDefined(v), context) }
 
             if (items.forall(_.isSuccess)) {
               Success(items.map(_.get))

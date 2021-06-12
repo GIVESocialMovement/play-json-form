@@ -1,13 +1,16 @@
+name := "play-json-form"
+version := "1.0.0"
 
 lazy val generator = (project in file("generator"))
   .settings(
     resolvers += Resolver.sonatypeRepo("public"),
     libraryDependencies += "com.eed3si9n" %% "treehugger" % "0.4.3",
-    mainClass := Some("givers.form.generator.Main")
+    mainClass := Some("givers.form.generator.Main"),
+    publish / skip := true
   )
-lazy val `play-json-form` = project in file(".")
-
 scalaVersion := "2.13.3"
+
+Test / parallelExecution := false
 
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play" % "2.8.7",
@@ -15,24 +18,41 @@ libraryDependencies ++= Seq(
   "org.mockito" % "mockito-core" % "2.18.3" % Test,
   "com.lihaoyi" %% "utest" % "0.7.2" % Test
 )
-
-organization := "givers.form"
-name := "play-json-form"
-version := "1.0.0"
-parallelExecution in Test := false
-
-publishMavenStyle := true
-
-bintrayOrganization := Some("givers")
-
-bintrayRepository := "maven"
-
-publishArtifact in Test := false
-
-pomIncludeRepository := { _ => false }
-
-licenses := Seq(("MIT", url("http://opensource.org/licenses/MIT")))
-
 testFrameworks += new TestFramework("utest.runner.Framework")
 
 coverageExcludedPackages := "givers.form.generated.*"
+
+organization := "io.github.tanin47"
+organizationName := "tanin47"
+organizationHomepage := Some(url("https://github.com/tanin47/play-json-form"))
+
+publishMavenStyle := true
+
+Test / publishArtifact := false
+
+pomIncludeRepository := { _ => false }
+publishTo := {
+  val nexus = "https://s01.oss.sonatype.org/"
+  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
+
+licenses := Seq(("MIT", url("http://opensource.org/licenses/MIT")))
+scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/tanin47/play-json-form"),
+    "scm:git@github.com:tanin47/play-json-form.git"
+  )
+)
+
+
+developers := List(
+  Developer(
+    id = "tanin",
+    name = "Tanin Na Nakorn",
+    email = "@tanin",
+    url = url("https://github.com/tanin47")
+  )
+)
+
+versionScheme := Some("semver-spec")

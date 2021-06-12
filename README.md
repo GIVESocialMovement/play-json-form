@@ -123,9 +123,7 @@ Usage
 Add the below line to your `build.sbt`:
 
 ```
-resolvers += Resolver.bintrayRepo("givers", "maven")
-
-libraryDependencies += "givers.form" %% "play-json-form" % "1.0.0"
+libraryDependencies += "io.github.tanin47" %% "play-json-form" % "1.0.0"
 ```
 
 The artifacts are hosted here: https://bintray.com/givers/maven/play-json-form
@@ -200,3 +198,4 @@ Develop
 
 1. Run `sbt generator/run` in order to generate the classes in `givers.form.generated`.
 2. Run `sbt test` to run all tests
+3. Run `sbt clean publishSigned` to publish

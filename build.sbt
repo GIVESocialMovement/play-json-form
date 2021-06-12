@@ -24,7 +24,14 @@ coverageExcludedPackages := "givers.form.generated.*"
 
 organization := "io.github.tanin47"
 organizationName := "tanin47"
-organizationHomepage := Some(url("https://github.com/tanin47/play-json-form"))
+homepage := Some(url("https://github.com/tanin47/play-json-form"))
+
+scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/tanin47/play-json-form"),
+    "scm:git@github.com:tanin47/play-json-form.git"
+  )
+)
 
 publishMavenStyle := true
 
@@ -38,13 +45,6 @@ publishTo := {
 }
 
 licenses := Seq(("MIT", url("http://opensource.org/licenses/MIT")))
-scmInfo := Some(
-  ScmInfo(
-    url("https://github.com/tanin47/play-json-form"),
-    "scm:git@github.com:tanin47/play-json-form.git"
-  )
-)
-
 
 developers := List(
   Developer(

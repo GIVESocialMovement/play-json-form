@@ -1,13 +1,19 @@
 package givers.form
 
-import givers.form.Mapping.ErrorSpec
+import givers.form.Mapping.{ErrorSpec, Field}
 import givers.form.generated.Forms
 import play.api.libs.json.{JsDefined, JsValue}
 
+import scala.reflect.ClassTag
+import scala.reflect.runtime.universe.TypeTag
 import scala.util.{Failure, Try}
 
 object Form extends Forms {
   def apply[T](errorPrefix: String, mapping: Mapping[T]) = new Form(errorPrefix, mapping)
+
+  def apply[T: TypeTag: ClassTag](errorPrefix: String, mappings: Seq[(String, Mapping[_])]): Form[T] = {
+    new Form(errorPrefix, new ObjectMappingList[T](mappings.map { m => Field(m._1, m._2) }))
+  }
 }
 
 class Form[T](errorPrefix: String, mapping: Mapping[T]) {

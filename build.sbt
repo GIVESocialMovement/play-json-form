@@ -8,7 +8,7 @@ lazy val generator = (project in file("generator"))
     mainClass := Some("givers.form.generator.Main"),
     publish / skip := true
   )
-scalaVersion := "2.13.3"
+scalaVersion := "2.13.16"
 
 Test / parallelExecution := false
 

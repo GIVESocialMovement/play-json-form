@@ -190,6 +190,18 @@ val email = Mappings.text.validate("error.email") { s => s.nonEmpty && s.contain
 
 Please see all predefined mappings in `givers.form.Mappings`.
 
+If there are more than 22 parameters, you can use the type-less version of it:
+
+```
+val form = Form[TestObj](
+  "validation.form",
+  Seq(
+    "a" -> Mappings.text(allowEmpty = false),
+    "b" -> Mappings.number()
+  )
+)
+```
+
 
 Develop
 --------

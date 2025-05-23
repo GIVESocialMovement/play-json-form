@@ -1,5 +1,5 @@
 name := "play-json-form"
-version := "1.0.0"
+version := "1.1.0"
 
 lazy val generator = (project in file("generator"))
   .settings(
@@ -13,8 +13,8 @@ scalaVersion := "2.13.16"
 Test / parallelExecution := false
 
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play" % "2.8.7",
-  "com.typesafe.play" %% "play-test" % "2.8.7" % Test,
+  "com.typesafe.play" %% "play" % "2.9.4",
+  "com.typesafe.play" %% "play-test" % "2.9.4" % Test,
   "org.mockito" % "mockito-core" % "2.18.3" % Test,
   "com.lihaoyi" %% "utest" % "0.7.2" % Test
 )

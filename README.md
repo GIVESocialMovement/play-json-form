@@ -125,7 +125,7 @@ Add the below line to your `build.sbt`:
 ```
 resolvers += Resolver.bintrayRepo("givers", "maven")
 
-libraryDependencies += "givers.form" %% "play-json-form" % "1.0.0"
+libraryDependencies += "givers.form" %% "play-json-form" % "2.0.0"
 ```
 
 The artifacts are hosted here: https://bintray.com/givers/maven/play-json-form
@@ -148,13 +148,13 @@ val form = Form(
   mapping(
     "a" -> text(allowEmpty = false),
     "b" -> number()
-  )(TestObj.apply)(TestObj.unapply)
+  )(TestObj.apply)(unapply[TestObj])
 )
 
 // We also have a slightly shorter API:
 val form2 = Form(
   TestObj.apply,
-  TestObj.unapply,
+  unapply[TestObj],
   "a" -> text(allowEmpty = false),
   "b" -> number()
 )

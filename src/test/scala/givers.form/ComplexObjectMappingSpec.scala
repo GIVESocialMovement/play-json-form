@@ -4,6 +4,7 @@ import givers.form.Mapping.ErrorSpec
 import givers.form.helpers.BaseSpec
 import play.api.libs.json.{JsDefined, Json}
 import utest.{Tests, _}
+import givers.form.Utils.unapply
 
 import scala.util.{Failure, Success}
 
@@ -14,7 +15,7 @@ object ComplexObjectMappingSpec extends BaseSpec {
   val mapping = Mappings
     .obj(
       Complex.apply,
-      Complex.unapply,
+      unapply[Complex],
       "first" -> Mappings.text(allowEmpty = false),
       "second" -> Mappings.text(allowEmpty = false).transform[String](
         bind = { (value, context) =>
@@ -33,7 +34,7 @@ object ComplexObjectMappingSpec extends BaseSpec {
       ),
       "nested" -> Mappings.obj(
         Nested.apply,
-        Nested.unapply,
+        unapply[Nested],
         "third"  -> Mappings.text(allowEmpty = false).transform[String](
           bind = { (value, context) =>
             context.parentOpt.map(_.current("second")) match {

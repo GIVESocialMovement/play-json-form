@@ -1,9 +1,11 @@
 package givers.form
 
 import givers.form.Mapping.ErrorSpec
+import givers.form.generated.ObjectMappings
 import givers.form.helpers.BaseSpec
-import play.api.libs.json._
-import utest.{Tests, _}
+import givers.form.Utils.unapply
+import play.api.libs.json.*
+import utest.{Tests, *}
 
 import scala.util.{Failure, Success}
 
@@ -16,12 +18,12 @@ object ObjectMappingSpec extends BaseSpec {
         case class NestedObj(num: Int)
         val mapping = Mappings.obj(
           TestObj.apply,
-          TestObj.unapply,
+          unapply[TestObj],
           "a" -> Mappings.text(allowEmpty = false),
           "b" -> Mappings.number(min = 10),
           "c" -> Mappings.obj(
             NestedObj.apply,
-            NestedObj.unapply,
+            unapply[NestedObj],
             "num" -> Mappings.number
           )
         )

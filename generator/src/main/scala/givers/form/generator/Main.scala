@@ -3,7 +3,6 @@ package givers.form.generator
 import java.io.PrintWriter
 import java.nio.file.{Files, Paths}
 import treehugger.forest._
-import definitions._
 import treehuggerDSL._
 
 object Main {
@@ -23,9 +22,9 @@ object Main {
         PARAM(
           "unapply",
           if (fields.size == 1) {
-            s"T => Option[(${parameterTypes.head.name})]"
+            s"T => Tuple1[${parameterTypes.head.name}]"
           } else {
-            s"T => Option[(${parameterTypes.map(_.name).mkString(", ")})]"
+            s"T => (${parameterTypes.map(_.name).mkString(", ")})"
           }
         )
       ) ++ fields
@@ -61,13 +60,9 @@ object Main {
         )
         .:=(
           BLOCK(
-            VAL("valueTuple").:=(REF("unapply").APPLY(REF("value")).DOT("get")),
+            VAL("valueTuple").:=(REF("unapply").APPLY(REF("value"))),
             VAL("values").:=(
-              if (parameterTypes.size == 1) {
-                REF("Seq").APPLY(REF("valueTuple"))
-              } else {
-                REF("valueTuple").DOT("productIterator").DOT("toList")
-              }
+              REF("valueTuple").DOT("productIterator").DOT("toList")
             ),
             REF("ObjectMapping")
               .DOT("unbind")
@@ -96,9 +91,9 @@ object Main {
       PARAM(
         "unapply",
         if (fields.size == 1) {
-          s"T => Option[(${parameterTypes.head.name})]"
+          s"T => Tuple1[${parameterTypes.head.name}]"
         } else {
-          s"T => Option[(${parameterTypes.map(_.name).mkString(", ")})]"
+          s"T => (${parameterTypes.map(_.name).mkString(", ")})"
         }
       )
     )
@@ -144,9 +139,9 @@ object Main {
       PARAM(
         "unapply",
         if (fields.size == 1) {
-          s"T => Option[(${parameterTypes.head.name})]"
+          s"T => Tuple1[${parameterTypes.head.name}]"
         } else {
-          s"T => Option[(${parameterTypes.map(_.name).mkString(", ")})]"
+          s"T => (${parameterTypes.map(_.name).mkString(", ")})"
         }
       )
     )

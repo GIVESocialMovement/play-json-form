@@ -2,6 +2,7 @@ package givers.form
 
 import givers.form.Mapping.ErrorSpec
 import givers.form.helpers.BaseSpec
+import givers.form.Utils._
 import play.api.libs.json._
 import utest.Tests
 import utest._
@@ -254,10 +255,10 @@ object MappingsSpec extends BaseSpec {
         case class Complex(a: Seq[Simple])
         val m = Mappings.obj(
           Complex.apply,
-          Complex.unapply,
+          unapply[Complex],
           "a" -> Mappings.seq(Mappings.obj(
               Simple.apply,
-              Simple.unapply,
+              unapply[Simple],
               "b" -> Mappings.seq(Mappings.boolean)
             )
           )
@@ -280,7 +281,7 @@ object MappingsSpec extends BaseSpec {
         case class Obj(a: String)
         val m = Mappings.obj(
           Obj.apply,
-          Obj.unapply,
+          unapply[Obj],
           "a" -> Mappings.text()
         )
         val params = Json.obj("a" -> "value")
@@ -293,7 +294,7 @@ object MappingsSpec extends BaseSpec {
         case class Obj(a: String, n: Long)
         val m = Mappings.obj(
           Obj.apply,
-          Obj.unapply,
+          unapply[Obj],
           "a" -> Mappings.text(),
           "n" -> Mappings.longNumber()
         )
@@ -308,16 +309,16 @@ object MappingsSpec extends BaseSpec {
         case class Complex(a: Seq[Simple], nOpt: Option[Long], s: Simple)
         val m = Mappings.obj(
           Complex.apply,
-          Complex.unapply,
+          unapply[Complex],
           "a" -> Mappings.seq(Mappings.obj(
             Simple.apply,
-            Simple.unapply,
+            unapply[Simple],
             "b" -> Mappings.boolean
           )),
           "n" -> Mappings.opt(Mappings.longNumber),
           "s" -> Mappings.obj(
             Simple.apply,
-            Simple.unapply,
+            unapply[Simple],
             "bb" -> Mappings.boolean
           )
         )

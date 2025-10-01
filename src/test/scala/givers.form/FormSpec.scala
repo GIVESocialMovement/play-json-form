@@ -5,6 +5,7 @@ import givers.form.helpers.BaseSpec
 import play.api.libs.json._
 import play.api.test.FakeRequest
 import utest.{Tests, _}
+import givers.form.Utils.unapply
 
 import scala.util.{Failure, Success}
 
@@ -15,7 +16,7 @@ object FormSpec extends BaseSpec {
   val form = Form(
     "validation.form",
     TestObj.apply,
-    TestObj.unapply,
+    unapply[TestObj],
     "a" -> Mappings.text(allowEmpty = false),
     "b" -> Mappings.number()
   )
